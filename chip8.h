@@ -10,7 +10,7 @@
 // number of instructions per second
 #define INSTRUCTION_FREQUENCY 700
 
-// Represents the state of a CHIP-8 process at any given point in time
+// Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
 struct Chip8 {
   unsigned char memory[ADDRESS_COUNT];
   unsigned short screen[DISPLAY_HEIGHT][DISPLAY_WIDTH];
