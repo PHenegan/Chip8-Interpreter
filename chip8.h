@@ -1,14 +1,21 @@
 // number of bytes of memory
 #define ADDRESS_COUNT 4096
-#define DISPLAY_WIDTH 64
-#define DISPLAY_HEIGHT 32
 #define REGISTER_COUNT 16
 #define STACK_SIZE 16
 // number of times per second the timer will update
 #define TIMER_FREQUENCY 60
-#define KEY_COUNT 16
 // number of instructions per second
 #define INSTRUCTION_FREQUENCY 700
+
+// Constants related to display
+#define DISPLAY_WIDTH 64
+#define DISPLAY_HEIGHT 32
+#define FONT_HEIGHT 5
+#define KEY_COUNT 16
+
+// Constants related to memory addresses
+#define PROGRAM_START 0x200
+#define FONT_START 0x050
 
 // Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
 struct Chip8 {
@@ -25,6 +32,8 @@ struct Chip8 {
   unsigned char key[KEY_COUNT];
 };
 
-void load_program(struct Chip8* chip8, char* file, int size);
+// Load the a program into memory from the given file
+int load_program(struct Chip8 *chip8, char *file);
 
-void load_font(struct Chip8*);
+// Load a system font into memory
+void load_font(struct Chip8 *chip8);
