@@ -22,8 +22,8 @@ struct Chip8 {
   unsigned char memory[ADDRESS_COUNT];
   unsigned short screen[DISPLAY_HEIGHT][DISPLAY_WIDTH];
   unsigned char V[REGISTER_COUNT]; // registers
-  unsigned short I; // instruction pointer
-  unsigned short pc; // program counter
+  unsigned short I; // index register
+  unsigned short pc; // program counter (instruction pointer)
   unsigned short stack[STACK_SIZE];
   unsigned short sp; // stack pointer
   unsigned char delay_timer;
@@ -35,5 +35,11 @@ struct Chip8 {
 // Load the a program into memory from the given file
 int load_program(struct Chip8 *chip8, char *file);
 
+// set values in the CHIP-8 system to an initial beginning state
+void initialize_system(struct Chip8 *chip8);
+
 // Load a system font into memory
 void load_font(struct Chip8 *chip8);
+
+// Execute a single fetch-decode-execute cycle of the CHIP-8 system
+int exec_cycle(struct Chip8 *chip8);

@@ -1,8 +1,6 @@
 #include "chip8.h"
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 int main(int argc, char* argv[]) {
   struct Chip8 *chip8 = calloc(1, sizeof(struct Chip8));
@@ -23,45 +21,27 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
-int load_program(struct Chip8 *chip8, char *file) {
-  // get the file descriptor of the program to load
-  int fd = open(file, O_RDONLY);
+short fetch_instruction(struct Chip8 *chip8) {
+  if (chip8->pc + 1 >= ADDRESS_COUNT) {
+    return -1;
+  }
+  // update the opcode, which is the first half of the instruction and the next address in memory
+  chip8->opcode = chip8->memory[chip8->pc];
+
+  // combine the next two addresses in memory into the full instruction
+  // using bitshifting and a bitwise or
+  short result = chip8->opcode << 8 | chip8->memory[chip8->pc + 1];
   
-  // read the program into the fist section of the chip8's memory,
-  // going up to the end of memory
-  return read(fd, chip8->memory + PROGRAM_START, ADDRESS_COUNT - PROGRAM_START + 1);
+  chip8->pc += 2;
+  return 0;
 }
 
-void load_font(struct Chip8 *chip8) {
-  // each row is a bitmap describing each commented symbol
-  // e.g. 0 will look like
-  // "11111"
-  // "10001"
-  // "10001"
-  // "10001"
-  // "11111"
-  // which draws the shape of a 0 (note the second bit is completely ignored and always 0)
-  char font[] = {
-    0xF0, 0x90, 0x90, 0x90, 0xF0, // 1
-    0x20, 0x60, 0x20, 0x20, 0x70, // 2
-    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-  };
-  int total_size = FONT_HEIGHT * KEY_COUNT;
-  
-  // load the font into memory
-  for (int i = 0; i < total_size; ++i) {
-    chip8->memory[FONT_START + i] = font[i];
+int exec_cycle(struct Chip8 *chip8) {
+  // NOTE (obvious) - this isn't complete
+  while (1) {
+    fetch_instruction(chip8);
+    break;
   }
+
+  return -1;
 }
