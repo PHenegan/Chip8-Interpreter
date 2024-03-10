@@ -17,6 +17,14 @@
 #define PROGRAM_START 0x200
 #define FONT_START 0x050
 
+// Instruction decoding bitmasks
+#define OP_MASK 0xF000
+#define OP_N 0x000F
+#define OP_NN 0x00FF
+#define OP_NNN 0x0FFF
+#define OP_X 0x0F00
+#define OP_Y 0x00F0
+
 // Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
 struct Chip8 {
   unsigned char memory[ADDRESS_COUNT];
