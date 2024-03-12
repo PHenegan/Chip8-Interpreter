@@ -22,11 +22,13 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
-void decrement_timer(char *timer, time_t *start, short play_sound) {
+void decrement_timer(unsigned char *timer, time_t *start, short play_sound) {
   time_t current = time(NULL);
   // decrement the timer if more than 1 second has passed if the timer is above 0
   if (*timer > 0 && current - *start > 0) {
     *timer -= 1;
+
+    *start = time(NULL);
 
     if (play_sound) {
       // TODO - play a sound if the flag is set
@@ -49,8 +51,72 @@ short fetch_instruction(struct Chip8 *const chip8) {
   return 0;
 }
 
+void exec_arithmetic(struct Chip8 *const chip8, short instr) {
+  unsigned char x = (unsigned char)((instr & OP_X) >> 2);
+  unsigned char y = (unsigned char)((instr & OP_Y) >> 1);
+  short result;
+  switch (instr & OP_N) {
+    // Set operator
+    case 0:
+      chip8->V[x] = chip8->V[y];
+      break;
+    // Binary OR
+    case 1:
+      chip8->V[x] = chip8->V[x] | chip8->V[y];
+      break;
+    // Binary AND
+    case 2:
+      chip8->V[x] = chip8->V[x] & chip8->V[y];
+      break;
+    // Logical XOR
+    case 3:
+      chip8->V[x] = chip8->V[x] ^ chip8->V[y];
+      break;
+    // ADD
+    case 4:
+      result = chip8->V[x] + chip8->V[y];
+      chip8->V[x] = (unsigned char)result;
+      chip8->V[0xF] = result > 255;
+      break;
+    // SUB (VX - VY)
+    case 5:
+      result = chip8->V[x] - chip8->V[y];
+      chip8->V[x] = (unsigned char)result;
+      chip8->V[0xF] = result > chip8->V[x];
+      break;
+    // SRA
+    case 6:
+      // shift VX right by 1, storing the shifted bit into VF
+      chip8->V[0xF] = chip8->V[x] & 1; // isolate the last bit
+      chip8->V[x] = chip8->V[x] >> 1;
+      break;
+    // SUB (VY - VX)
+    case 7:
+      chip8->V[x] = chip8->V[y] - chip8->V[x];
+      chip8->V[0xF] = chip8->V[x] > chip8->V[y];
+      break;
+    // SLA
+    case 0xE:
+      // shift VX left by 1, storing the shifted bit into VF
+      chip8->V[0xF] = chip8->V[x] & 0x8000; // isolate the first bit
+      chip8->V[x] = chip8->V[x] << 1; 
+      break;
+  }
+}
+
 void exec_instruction(struct Chip8 *const chip8, short instruction) {
-    switch (chip8->opcode & OP_MASK) {
+  switch ((instruction & OP_MASK) >> 3) {
+    case OP_SYS:
+      if (instruction == OP_CLR_SCRN) {
+        // clear the screen
+      }
+      else if (instruction == OP_RET) {
+        // call return
+      }
+      break;
+    case OP_MATH_REG:
+      exec_arithmetic(chip8, instruction);
+      break;
   }
 }
 
@@ -60,6 +126,8 @@ int exec_cycle(struct Chip8 *const chip8) {
 
   while (1) {
     // TODO - decrement timers here
+    decrement_timer(&chip8->delay_timer, &start, 0);
+    decrement_timer(&chip8->sound_timer, &start, 1);
     
     short instruction = fetch_instruction(chip8);
 

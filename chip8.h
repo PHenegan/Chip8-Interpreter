@@ -25,6 +25,14 @@
 #define OP_X 0x0F00
 #define OP_Y 0x00F0
 
+// Specific Instructions
+#define OP_SYS 0x0
+#define OP_CLR_SCRN 0x00E0
+#define OP_RET 0x00EE
+#define OP_MATH_REG 0x8
+#define OP_JUMP 0x1
+#define OP_CALL 0x2
+
 // Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
 struct Chip8 {
   unsigned char memory[ADDRESS_COUNT];
