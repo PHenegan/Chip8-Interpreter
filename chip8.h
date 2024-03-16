@@ -37,7 +37,27 @@
 #define OP_BNE 0x9
 #define OP_LI 0x6
 #define OP_ADDI 0x7
-#define OP_MATH 0x8
+#define OP_SET_IDX 0xA // NOTE - I don't know what I (index) is used for
+#define OP_JO 0xB // Jump w/ OFFSET
+#define OP_RAND 0xC
+#define OP_ALU 0x8
+#define OP_DISPLAY 0xD
+#define OP_BKEY 0xE
+#define OP_IO 0xF
+
+#define BK_P 0x9E // skip when a key is pressed
+#define BK_NP 0xA1 // skip when a key is not pressed
+
+// IO instructions (begin with 0xF)
+#define IO_LTIME 0x07
+#define IO_SDTIME 0x15
+#define IO_SSTIME 0x18
+#define IO_ADD_IDX 0x1E
+#define IO_GET_KEY 0x0A
+#define IO_CHAR 0x29
+#define IO_BIN_DEC 0x33
+#define IO_SMEM 0x55
+#define IO_LMEM 0x65
 
 // Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
 struct Chip8 {

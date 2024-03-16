@@ -5,6 +5,7 @@
 
 int main(int argc, char* argv[]) {
   struct Chip8 *chip8 = calloc(1, sizeof(struct Chip8));
+  srand(time(NULL));
   // ensure a file was passed in
   if (argc < 2) {
     fprintf(stderr, "Unable to load program - no file passed in");
@@ -51,11 +52,9 @@ short fetch_instruction(struct Chip8 *const chip8) {
   return 0;
 }
 
-void exec_arithmetic(struct Chip8 *const chip8, short instr) {
-  unsigned char x = (unsigned char)((instr & OP_X) >> 2);
-  unsigned char y = (unsigned char)((instr & OP_Y) >> 1);
+void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
   short result;
-  switch (instr & OP_N) {
+  switch (n) {
     // Set operator
     case 0:
       chip8->V[x] = chip8->V[y];
@@ -86,6 +85,7 @@ void exec_arithmetic(struct Chip8 *const chip8, short instr) {
       break;
     // SRA
     case 6:
+      // TODO - make configurable with a flag for SUPER-CHIP and CHIP-48 programs
       // shift VX right by 1, storing the shifted bit into VF
       chip8->V[0xF] = chip8->V[x] & 1; // isolate the last bit
       chip8->V[x] = chip8->V[x] >> 1;
@@ -97,11 +97,20 @@ void exec_arithmetic(struct Chip8 *const chip8, short instr) {
       break;
     // SLA
     case 0xE:
+      // TODO - make configurable with a flag for SUPER-CHIP and CHIP-48 programs
       // shift VX left by 1, storing the shifted bit into VF
       chip8->V[0xF] = chip8->V[x] & 0x8000; // isolate the first bit
       chip8->V[x] = chip8->V[x] << 1; 
       break;
   }
+}
+
+void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
+
+}
+
+void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
+
 }
 
 void exec_instruction(struct Chip8 *const chip8, short instruction) {
@@ -117,6 +126,9 @@ void exec_instruction(struct Chip8 *const chip8, short instruction) {
         // clear the screen
       }
       else if (instruction == OP_RET) {
+        // NOTE - I don't think it's necessary to overwrite the stack value?
+        chip8->pc = chip8->stack[chip8->sp];
+        chip8->sp--;
         // call return
       }
       break;
@@ -149,8 +161,25 @@ void exec_instruction(struct Chip8 *const chip8, short instruction) {
         chip8->pc += 2;
       }
       break;
-    case OP_MATH:
-      exec_arithmetic(chip8, instruction);
+    case OP_LI:
+      chip8->V[x] = nn;
+      break;
+    case OP_ADDI:
+      chip8->V[x] += nn; 
+      break;
+    case OP_SET_IDX:
+      chip8->I = nnn;
+      break;
+    case OP_JO:
+      // TODO: make bug configurable for compatability with SUPER-CHIP and CHIP-48 programs
+      chip8->pc = nnn + chip8->V[0];
+      break;
+    case OP_RAND:
+      // generate a random number, do a binary AND with NN, and load it into VX
+      chip8->V[x]= nn & rand();
+      break;
+    case OP_ALU:
+      exec_alu(chip8, n, x, y);
       break;
   }
 }
