@@ -105,7 +105,13 @@ void exec_arithmetic(struct Chip8 *const chip8, short instr) {
 }
 
 void exec_instruction(struct Chip8 *const chip8, short instruction) {
-  switch ((instruction & OP_MASK) >> 3) {
+  unsigned short nnn = instruction & OP_NNN;
+  unsigned char nn = instruction & OP_NN;
+  unsigned char n = instruction & OP_N;
+  unsigned char x = (instruction & OP_X) >> 2;
+  unsigned char y = (instruction & OP_Y) >> 1;
+
+  switch (instruction >> 3) {
     case OP_SYS:
       if (instruction == OP_CLR_SCRN) {
         // clear the screen
@@ -114,7 +120,36 @@ void exec_instruction(struct Chip8 *const chip8, short instruction) {
         // call return
       }
       break;
-    case OP_MATH_REG:
+    case OP_JUMP:
+      chip8->pc = nnn; 
+      break;
+    case OP_CALL:
+      chip8->sp++;
+      chip8->stack[chip8->sp] = chip8->pc;
+      chip8->pc = nnn;
+      break;
+    case OP_BEQI:
+      // skip 1 instruction if VX == NN
+      if (chip8->V[x] == nn) {
+        chip8->pc += 2;
+      }
+      break;
+    case OP_BNEI:
+      if (chip8->V[x] != nn) {
+        chip8->pc += 2;
+      }
+      break;
+    case OP_BEQ:
+      if (chip8->V[x] == chip8->V[y]) {
+        chip8->pc += 2;
+      }
+      break;
+    case OP_BNE:
+      if (chip8->V[x] != chip8->V[y]) {
+        chip8->pc += 2;
+      }
+      break;
+    case OP_MATH:
       exec_arithmetic(chip8, instruction);
       break;
   }
@@ -125,7 +160,6 @@ int exec_cycle(struct Chip8 *const chip8) {
   time_t start = time(NULL);
 
   while (1) {
-    // TODO - decrement timers here
     decrement_timer(&chip8->delay_timer, &start, 0);
     decrement_timer(&chip8->sound_timer, &start, 1);
     

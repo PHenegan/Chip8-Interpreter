@@ -29,9 +29,15 @@
 #define OP_SYS 0x0
 #define OP_CLR_SCRN 0x00E0
 #define OP_RET 0x00EE
-#define OP_MATH_REG 0x8
 #define OP_JUMP 0x1
 #define OP_CALL 0x2
+#define OP_BEQI 0x3
+#define OP_BNEI 0x4
+#define OP_BEQ 0x5
+#define OP_BNE 0x9
+#define OP_LI 0x6
+#define OP_ADDI 0x7
+#define OP_MATH 0x8
 
 // Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
 struct Chip8 {
