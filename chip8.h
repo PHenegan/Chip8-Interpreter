@@ -37,19 +37,31 @@
 #define OP_BNE 0x9
 #define OP_LI 0x6
 #define OP_ADDI 0x7
+#define OP_ALU 0x8
 #define OP_SET_IDX 0xA // NOTE - I don't know what I (index) is used for
 #define OP_JO 0xB // Jump w/ OFFSET
 #define OP_RAND 0xC
-#define OP_ALU 0x8
 #define OP_DISPLAY 0xD
 #define OP_BKEY 0xE
 #define OP_IO 0xF
 
+// ALU instructions
+#define ALU_SET 0x0
+#define ALU_OR 0x1
+#define ALU_AND 0x2
+#define ALU_XOR 0x3
+#define ALU_ADD 0x4
+#define ALU_SUBY 0x5
+#define ALU_SRL 0x6
+#define ALU_SUBX 0x7
+#define ALU_SLL 0xE
+
+// Branch keyboard instructions
 #define BK_P 0x9E // skip when a key is pressed
 #define BK_NP 0xA1 // skip when a key is not pressed
 
 // IO instructions (begin with 0xF)
-#define IO_LTIME 0x07
+#define IO_LDTIME 0x07
 #define IO_SDTIME 0x15
 #define IO_SSTIME 0x18
 #define IO_ADD_IDX 0x1E
@@ -72,6 +84,7 @@ struct Chip8 {
   unsigned char sound_timer;
   unsigned char opcode;
   unsigned char key[KEY_COUNT];
+  char displaying;
 };
 
 // Load the a program into memory from the given file

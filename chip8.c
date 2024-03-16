@@ -4,6 +4,7 @@
 #include <time.h>
 
 int main(int argc, char* argv[]) {
+  // using calloc to make sure everything is 0-initialized
   struct Chip8 *chip8 = calloc(1, sizeof(struct Chip8));
   srand(time(NULL));
   // ensure a file was passed in
@@ -37,66 +38,60 @@ void decrement_timer(unsigned char *timer, time_t *start, short play_sound) {
   }
 }
 
-short fetch_instruction(struct Chip8 *const chip8) {
+unsigned short fetch_instruction(struct Chip8 *const chip8) {
   if (chip8->pc + 1 >= ADDRESS_COUNT) {
     return -1;
   }
-  // update the opcode, which is the first half of the instruction and the next address in memory
-  chip8->opcode = chip8->memory[chip8->pc];
+  // update the opcode, which is the first 4 bits of the instruction and the next address in memory
+  chip8->opcode = chip8->memory[chip8->pc] >> 1;
 
   // combine the next two addresses in memory into the full instruction
   // using bitshifting and a bitwise or
-  short result = chip8->opcode << 8 | chip8->memory[chip8->pc + 1];
+  unsigned short result = chip8->opcode << 8 | chip8->memory[chip8->pc + 1];
    
   chip8->pc += 2;
-  return 0;
+  return result;
 }
 
 void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
   short result;
   switch (n) {
-    // Set operator
-    case 0:
+    case ALU_SET:
       chip8->V[x] = chip8->V[y];
       break;
-    // Binary OR
-    case 1:
+    case ALU_OR:
       chip8->V[x] = chip8->V[x] | chip8->V[y];
       break;
-    // Binary AND
-    case 2:
+    case ALU_AND:
       chip8->V[x] = chip8->V[x] & chip8->V[y];
       break;
-    // Logical XOR
-    case 3:
+    case ALU_XOR:
       chip8->V[x] = chip8->V[x] ^ chip8->V[y];
       break;
     // ADD
-    case 4:
+    case ALU_ADD:
       result = chip8->V[x] + chip8->V[y];
       chip8->V[x] = (unsigned char)result;
       chip8->V[0xF] = result > 255;
       break;
     // SUB (VX - VY)
-    case 5:
+    case ALU_SUBY:
       result = chip8->V[x] - chip8->V[y];
       chip8->V[x] = (unsigned char)result;
       chip8->V[0xF] = result > chip8->V[x];
       break;
-    // SRA
-    case 6:
+    case ALU_SRL:
       // TODO - make configurable with a flag for SUPER-CHIP and CHIP-48 programs
       // shift VX right by 1, storing the shifted bit into VF
       chip8->V[0xF] = chip8->V[x] & 1; // isolate the last bit
       chip8->V[x] = chip8->V[x] >> 1;
       break;
     // SUB (VY - VX)
-    case 7:
+    case ALU_SUBX:
       chip8->V[x] = chip8->V[y] - chip8->V[x];
       chip8->V[0xF] = chip8->V[x] > chip8->V[y];
       break;
-    // SLA
-    case 0xE:
+    case ALU_SLL:
       // TODO - make configurable with a flag for SUPER-CHIP and CHIP-48 programs
       // shift VX left by 1, storing the shifted bit into VF
       chip8->V[0xF] = chip8->V[x] & 0x8000; // isolate the first bit
@@ -110,19 +105,63 @@ void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, u
 }
 
 void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
-
+  char result;
+  switch (nn) {
+    case IO_LDTIME:
+      chip8->V[x] = chip8->delay_timer;
+      break;
+    case IO_SDTIME:
+      chip8->delay_timer = chip8->V[x];
+      break;
+    case IO_SSTIME:
+      chip8->sound_timer = chip8->V[x];
+      break;
+    case IO_ADD_IDX:
+      chip8->I += chip8->V[x];
+      // I should only take up 12 bits, anything else is treated as an overflow
+      chip8->V[0xF] = chip8->I >= 0x1000;
+      chip8->I = chip8->I & 0x0FFF;
+      break;
+    case IO_GET_KEY:
+      // TODO - implement
+      break;
+    case IO_CHAR:
+      // calculate font location of the specific character X in memory
+      chip8->I = FONT_START + x * FONT_HEIGHT; 
+      break;
+    case IO_BIN_DEC: 
+      // extract 3 decimal digits from a number and store them in memory
+      chip8->memory[chip8->I] = chip8->V[x] / 100; // hundreds place
+      chip8->memory[chip8->I + 1] = (chip8->V[x] / 10) % 10; // tens place
+      chip8->memory[chip8->I + 2] = chip8->V[x] % 10; // ones place
+      break;
+    case IO_SMEM:
+      // TODO - make toggle for incrementing I
+      // Load all registers up to VX into memory starting at I
+      for (int i = 0; i <= x; i++) {
+        chip8->memory[chip8->I + i] = chip8->V[i];
+      }
+      break;
+    case IO_LMEM:
+      for (int i = 0; i <= x; i++) {
+        chip8->V[i] = chip8->memory[chip8->I + i];
+      }
+      break;
+  }
 }
 
-void exec_instruction(struct Chip8 *const chip8, short instruction) {
+void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
   unsigned short nnn = instruction & OP_NNN;
   unsigned char nn = instruction & OP_NN;
   unsigned char n = instruction & OP_N;
   unsigned char x = (instruction & OP_X) >> 2;
   unsigned char y = (instruction & OP_Y) >> 1;
+  chip8->displaying = 0;
 
-  switch (instruction >> 3) {
+  switch (chip8->opcode) {
     case OP_SYS:
       if (instruction == OP_CLR_SCRN) {
+        chip8->displaying = 1;
         // clear the screen
       }
       else if (instruction == OP_RET) {
@@ -146,17 +185,20 @@ void exec_instruction(struct Chip8 *const chip8, short instruction) {
         chip8->pc += 2;
       }
       break;
+      // skip 1 instruction if VX != NN
     case OP_BNEI:
       if (chip8->V[x] != nn) {
         chip8->pc += 2;
       }
       break;
     case OP_BEQ:
+      // skip 1 instruction if VX == VY
       if (chip8->V[x] == chip8->V[y]) {
         chip8->pc += 2;
       }
       break;
     case OP_BNE:
+      // skip 1 instruction if VX != VY
       if (chip8->V[x] != chip8->V[y]) {
         chip8->pc += 2;
       }
@@ -166,6 +208,9 @@ void exec_instruction(struct Chip8 *const chip8, short instruction) {
       break;
     case OP_ADDI:
       chip8->V[x] += nn; 
+      break;
+    case OP_ALU:
+      exec_alu(chip8, x, y, n);
       break;
     case OP_SET_IDX:
       chip8->I = nnn;
@@ -178,8 +223,15 @@ void exec_instruction(struct Chip8 *const chip8, short instruction) {
       // generate a random number, do a binary AND with NN, and load it into VX
       chip8->V[x]= nn & rand();
       break;
-    case OP_ALU:
-      exec_alu(chip8, n, x, y);
+    case OP_DISPLAY:
+      chip8->displaying = 1;
+      exec_display(chip8, x, y, n);
+      break;
+    case OP_BKEY:
+      // TODO: handle these operators
+      break;
+    case OP_IO:
+      exec_io(chip8, x, nn);
       break;
   }
 }
@@ -188,11 +240,11 @@ int exec_cycle(struct Chip8 *const chip8) {
   // NOTE - this isn't complete
   time_t start = time(NULL);
 
-  while (1) {
+  while (chip8->pc < ADDRESS_COUNT) {
     decrement_timer(&chip8->delay_timer, &start, 0);
     decrement_timer(&chip8->sound_timer, &start, 1);
     
-    short instruction = fetch_instruction(chip8);
+    unsigned short instruction = fetch_instruction(chip8);
 
     exec_instruction(chip8, instruction);
     
