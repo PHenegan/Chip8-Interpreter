@@ -74,7 +74,7 @@
 // Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
 struct Chip8 {
   unsigned char memory[ADDRESS_COUNT];
-  unsigned short screen[DISPLAY_HEIGHT][DISPLAY_WIDTH];
+  unsigned char screen[DISPLAY_HEIGHT][DISPLAY_WIDTH];
   unsigned char V[REGISTER_COUNT]; // registers
   unsigned short I; // index register
   unsigned short pc; // program counter (instruction pointer)

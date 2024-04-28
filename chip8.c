@@ -68,7 +68,6 @@ void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsig
     case ALU_XOR:
       chip8->V[x] = chip8->V[x] ^ chip8->V[y];
       break;
-    // ADD
     case ALU_ADD:
       result = chip8->V[x] + chip8->V[y];
       chip8->V[x] = (unsigned char)result;
@@ -101,7 +100,25 @@ void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsig
 }
 
 void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
+  unsigned char x_pos = chip8->V[x] % DISPLAY_WIDTH;
+  unsigned char y_pos = chip8->V[y] % DISPLAY_HEIGHT;
 
+  chip8->V[0xF] = 0; // reset flag register
+
+  for (int row = 0; row < n && y_pos + row < DISPLAY_HEIGHT; row++) {
+    unsigned char draw_byte = chip8->memory[chip8->I + row];
+    // 8 is hardcoded because bytes are used, so at most 8 pixels can be set.
+    unsigned char target_bit =  1;
+    for (int col = 0; col < 8 && x_pos + col < DISPLAY_WIDTH; col++) {
+      unsigned char* pixel = &chip8->screen[y_pos + row][x_pos + col];
+      unsigned char new_value = draw_byte & target_bit; 
+      if (*pixel && !new_value) {
+        chip8->V[0xF] = 1;
+      }
+      *pixel = new_value;
+      target_bit = target_bit << 1;
+    }
+  }
 }
 
 void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
@@ -150,6 +167,14 @@ void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
   }
 }
 
+void clear_screen(struct Chip8 *const chip8) {
+  for (int y = 0; y < DISPLAY_HEIGHT; y++) {
+    for (int x = 0; x < DISPLAY_WIDTH; x++) {
+      chip8->screen[y][x] = 0;
+    }
+  }
+}
+
 void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
   unsigned short nnn = instruction & OP_NNN;
   unsigned char nn = instruction & OP_NN;
@@ -162,7 +187,7 @@ void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
     case OP_SYS:
       if (instruction == OP_CLR_SCRN) {
         chip8->displaying = 1;
-        // clear the screen
+        clear_screen(chip8);
       }
       else if (instruction == OP_RET) {
         // NOTE - I don't think it's necessary to overwrite the stack value?
@@ -229,6 +254,10 @@ void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
       break;
     case OP_BKEY:
       // TODO: handle these operators
+      // Skip 1 instruction if either "skip if pressed" or "skip if not pressed" are being used
+      if ((nn == 0x9E && chip8->key[x]) || (nn == 0xA1 && !chip8->key[x])) {
+        chip8->pc += 2;
+      }
       break;
     case OP_IO:
       exec_io(chip8, x, nn);
@@ -244,6 +273,9 @@ int exec_cycle(struct Chip8 *const chip8) {
     decrement_timer(&chip8->delay_timer, &start, 0);
     decrement_timer(&chip8->sound_timer, &start, 1);
     
+    // TODO - do I get keypress here or after the instruction is executed?
+    // Does it actually matter?
+
     unsigned short instruction = fetch_instruction(chip8);
 
     exec_instruction(chip8, instruction);
