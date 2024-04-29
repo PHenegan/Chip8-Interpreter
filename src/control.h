@@ -3,9 +3,6 @@
 
 #include "chip8.h"
 
-// number of instructions per second
-#define INSTRUCTION_FREQUENCY 700
-
 // Instruction decoding bitmasks
 #define OP_MASK 0xF000
 #define OP_N 0x000F
@@ -66,6 +63,6 @@
 // and params, and outputs the result (maybe also take in an `ovf` pointer)
 void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n);
 
-int exec_cycle(struct Chip8 *const chip8, time_t* start);
+int exec_cycle(struct Chip8 *const chip8, time_t timers[2]);
 
 #endif

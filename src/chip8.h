@@ -49,12 +49,7 @@ void load_font(struct Chip8 *const chip8);
 // Get the next instruction and increment the program_counter by two
 unsigned short fetch_instruction(struct Chip8 *const chip8);
 
-// Decrement a given given timer for the chip8 system
-void decrement_timer(
-  unsigned char *timer,
-  time_t *start,
-  char* play_sound 
-);
+
 
 // Execute a single fetch-decode-execute cycle of the CHIP-8 system
 // `chip8`: the chip8 processor on which a cycle will be executed 

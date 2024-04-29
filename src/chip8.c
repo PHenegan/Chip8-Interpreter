@@ -89,23 +89,6 @@ void load_font(struct Chip8 *chip8) {
   }
 }
 
-void decrement_timer(
-                     unsigned char *timer,
-                     time_t *start,
-                     char* play_sound) {
-  time_t current = time(NULL);
-  // decrement the timer if more than 1 second has passed if the timer is above 0
-  if (*timer > 0 && current - *start > 0) {
-    *timer -= 1;
-
-    *start = time(NULL);
-
-    if (play_sound != NULL) {
-      *play_sound = 1;
-    } 
-  }
-}
-
 unsigned short fetch_instruction(struct Chip8 *const chip8) {
   if (chip8->pc + 1 >= ADDRESS_COUNT) {
     return -1;

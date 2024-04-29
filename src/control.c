@@ -1,6 +1,8 @@
 #include "control.h"
+#include "chip8-timer.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
   short result;
@@ -214,13 +216,13 @@ void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
   }
 }
 
-int exec_cycle(struct Chip8 *const chip8, time_t* start) {
+int exec_cycle(struct Chip8 *const chip8, time_t timers[2]) {
   char play_sound = 0;
 
   // TODO - maybe make this loop separately on a different thread,
   // and add a mutex for each timer?
-  decrement_timer(&chip8->delay_timer, start, NULL);
-  decrement_timer(&chip8->sound_timer, start, &play_sound);
+  decrement_timer(&chip8->delay_timer, timers, NULL);
+  decrement_timer(&chip8->sound_timer, timers + 1, &play_sound);
 
   unsigned short instruction = fetch_instruction(chip8);
 
@@ -235,11 +237,11 @@ int exec_cycle(struct Chip8 *const chip8, time_t* start) {
 
 int exec_program(struct Chip8 *const chip8) {
   // NOTE - this isn't complete
-  time_t start = time(NULL);
+  time_t timers[2] = { time(NULL), time(NULL) };
 
   while (chip8->pc < ADDRESS_COUNT) {
-    exec_cycle(chip8, &start);
-    break;
+    exec_cycle(chip8, timers);
+    instruction_sleep();
   }
 
   fprintf(stderr, "Error: this program is not complete\n");
