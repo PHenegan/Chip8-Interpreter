@@ -27,6 +27,10 @@ and `unistd.h`. In theory, this code should work on any POSIX-compliant system, 
 have access to a MacOS system. From what I can tell, none of the above libraries work
 in Windows either, though it would probably work with something like WSL 2 if you're dedicated enough.
 
+
+(This install setup is outdated because I'm learning how to use CMake, I will update this once I
+have a more finalized CMake setup)
+
 In order to build the interpreter, start by opening a terminal window in the project directory. 
 
 You can run `make chip8`. Then, to run the program, simply type `./chip8`.

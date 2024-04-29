@@ -1,57 +1,6 @@
-#include "chip8.h"
+#include "control.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-
-int main(int argc, char* argv[]) {
-  // using calloc to make sure everything is 0-initialized
-  struct Chip8 *chip8 = calloc(1, sizeof(struct Chip8));
-  srand(time(NULL));
-  // ensure a file was passed in
-  if (argc < 2) {
-    fprintf(stderr, "Unable to load program - no file passed in");
-    exit(-1);
-  }
-
-  // try to load the file in
-  if (load_program(chip8, argv[1]) == -1) {
-    fprintf(stderr, "Unable to load program - error loading file");
-    exit(-1);
-  }
-  load_font(chip8);
-  
-  free(chip8);
-  return 0;
-}
-
-void decrement_timer(unsigned char *timer, time_t *start, short play_sound) {
-  time_t current = time(NULL);
-  // decrement the timer if more than 1 second has passed if the timer is above 0
-  if (*timer > 0 && current - *start > 0) {
-    *timer -= 1;
-
-    *start = time(NULL);
-
-    if (play_sound) {
-      // TODO - play a sound if the flag is set
-    }
-  }
-}
-
-unsigned short fetch_instruction(struct Chip8 *const chip8) {
-  if (chip8->pc + 1 >= ADDRESS_COUNT) {
-    return -1;
-  }
-  // update the opcode, which is the first 4 bits of the instruction and the next address in memory
-  chip8->opcode = chip8->memory[chip8->pc] >> 1;
-
-  // combine the next two addresses in memory into the full instruction
-  // using bitshifting and a bitwise or
-  unsigned short result = chip8->opcode << 8 | chip8->memory[chip8->pc + 1];
-   
-  chip8->pc += 2;
-  return result;
-}
 
 void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
   short result;
@@ -265,24 +214,34 @@ void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
   }
 }
 
-int exec_cycle(struct Chip8 *const chip8) {
+int exec_cycle(struct Chip8 *const chip8, time_t* start) {
+  char play_sound = 0;
+
+  // TODO - maybe make this loop separately on a different thread,
+  // and add a mutex for each timer?
+  decrement_timer(&chip8->delay_timer, start, NULL);
+  decrement_timer(&chip8->sound_timer, start, &play_sound);
+
+  unsigned short instruction = fetch_instruction(chip8);
+
+  // TODO - get inputs here
+  exec_instruction(chip8, instruction);
+  
+  // TODO - draw display here
+  // Alternatively - put display drawing in another separate thread,
+  // update at 60 fps
+  return 0;
+}
+
+int exec_program(struct Chip8 *const chip8) {
   // NOTE - this isn't complete
   time_t start = time(NULL);
 
   while (chip8->pc < ADDRESS_COUNT) {
-    decrement_timer(&chip8->delay_timer, &start, 0);
-    decrement_timer(&chip8->sound_timer, &start, 1);
-    
-    // TODO - do I get keypress here or after the instruction is executed?
-    // Does it actually matter?
-
-    unsigned short instruction = fetch_instruction(chip8);
-
-    exec_instruction(chip8, instruction);
-    
-    // TODO - get keypress here
+    exec_cycle(chip8, &start);
     break;
   }
 
+  fprintf(stderr, "Error: this program is not complete\n");
   return -1;
 }
