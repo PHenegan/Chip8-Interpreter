@@ -31,6 +31,28 @@ in Windows either, though it would probably work with something like WSL 2 if yo
 (This install setup is outdated because I'm learning how to use CMake, I will update this once I
 have a more finalized CMake setup)
 
+### Dependencies
+
+This project depends on SDL2, SDL2_image, and SDL2_sound. These can be installed with a package manager,
+or using the included shell.nix setup for systems using the nix package manager.
+
+### Building
+
+(Optional, if using nix)
+```
+nix-shell ./shell.nix
+```
+**If not using nix, make sure you have SDL2, SDL2_image, and SDL2_sound installed via a package manager.** These may be bundled
+into a single SDL2 package depending on the distribution.
+
+Then execute the following two shell scripts:
+```
+./configure.sh
+./build.sh
+```
+
+This will create the executable file `./build/chip8` which can be run as a program
+
 In order to build the interpreter, start by opening a terminal window in the project directory. 
 
 You can run `make chip8`. Then, to run the program, simply type `./chip8`.
@@ -38,3 +60,4 @@ You can run `make chip8`. Then, to run the program, simply type `./chip8`.
 ## Credit
 
 [This guide](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/) was a great resource in describing the specifications of the CHIP-8 instructions and expected behaviors.
+[SDL2] Is the library I used for displaying graphics and getting user inputs.
