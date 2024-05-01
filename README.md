@@ -60,4 +60,5 @@ You can run `make chip8`. Then, to run the program, simply type `./chip8`.
 ## Credit
 
 [This guide](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/) was a great resource in describing the specifications of the CHIP-8 instructions and expected behaviors.
-[SDL2] Is the library I used for displaying graphics and getting user inputs.
+
+[SDL2](https://wiki.libsdl.org/SDL2/FrontPage) Is the library I used for displaying graphics and getting user inputs.
