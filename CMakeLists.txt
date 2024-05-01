@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.27.7) # May work on earlier versions, I'm using
 
 project(chip8)
 
-add_executable(${PROJECT_NAME} main.c chip8.c control.c)
+add_subdirectory(./src)
 
-target_link_libraries(chip8 SDL2 SDL2_image)
+find_package(SDL2 REQUIRED)
+target_link_libraries(chip8 SDL2::SDL2)

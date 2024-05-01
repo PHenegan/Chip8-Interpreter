@@ -1,3 +1,3 @@
 #! /bin/sh
-cmake -S ./src/ -B ./out/build/
+cmake -S ./ -B ./out/build/
 

@@ -44,7 +44,7 @@ void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsig
     case ALU_SLL:
       // TODO - make configurable with a flag for SUPER-CHIP and CHIP-48 programs
       // shift VX left by 1, storing the shifted bit into VF
-      chip8->V[0xF] = chip8->V[x] & 0x8000; // isolate the first bit
+      chip8->V[0xF] = chip8->V[x] & (unsigned char)0x8000; // isolate the first bit
       chip8->V[x] = chip8->V[x] << 1; 
       break;
   }

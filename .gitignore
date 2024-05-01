@@ -2,3 +2,6 @@ out/
 
 # Since CMake handles building, the makefile can be ignored
 Makefile
+
+# direnv temp files
+.direnv/
