@@ -2,6 +2,9 @@
 #define CONTROL
 
 #include "chip8.h"
+#include "view.h"
+
+#define INSTRUCTION_FREQUENCY 700
 
 // Instruction decoding bitmasks
 #define OP_MASK 0xF000
@@ -63,6 +66,14 @@
 // and params, and outputs the result (maybe also take in an `ovf` pointer)
 void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n);
 
-int exec_cycle(struct Chip8 *const chip8, time_t timers[2]);
+// Execute a single fetch-decode-execute cycle of the CHIP-8 system
+// `chip8`: the chip8 processor on which a cycle will be executed 
+// `view`: the object used to display the state of the CHIP-8 to the user
+int exec_cycle(struct Chip8 *const chip8, struct View *const view);
+
+// Execute the program currently stored in the CHIP-8's memory
+// `chip8`: the chip8 processor to load the program from
+// `view`: the object used to display the state of the CHIP-8 to the user
+int exec_program(struct Chip8 *chip8, struct View *const view);
 
 #endif

@@ -1,7 +1,7 @@
 #ifndef CHIP8
 #define CHIP8
 
-#include <time.h>
+#include <SDL2/SDL_mutex.h>
 
 // number of bytes of memory
 #define ADDRESS_COUNT 4096
@@ -29,12 +29,13 @@ struct Chip8 {
   unsigned short pc; // program counter (instruction pointer)
   unsigned short stack[STACK_SIZE];
   unsigned short sp; // stack pointer
+  SDL_mutex* timer_mutex;
   unsigned char delay_timer;
   unsigned char sound_timer;
+  char sound_flag;
   unsigned char opcode;
   unsigned char key[KEY_COUNT];
   char displaying;
-  char sound_flag;
 };
 
 // Load the a program into memory from the given file
@@ -48,16 +49,5 @@ void load_font(struct Chip8 *const chip8);
 
 // Get the next instruction and increment the program_counter by two
 unsigned short fetch_instruction(struct Chip8 *const chip8);
-
-
-
-// Execute a single fetch-decode-execute cycle of the CHIP-8 system
-// `chip8`: the chip8 processor on which a cycle will be executed 
-// `start`: a timestamp used for updating the chip8's timers
-int exec_cycle(struct Chip8 *chip8, time_t* start);
-
-// Execute the program currently stored in the CHIP-8's memory
-// `chip8`: the chip8 processor to load the program from
-int exec_program(struct Chip8 *chip8);
 
 #endif

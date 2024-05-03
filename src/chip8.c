@@ -11,6 +11,7 @@ void initialize_system(struct Chip8 *chip8) {
   chip8->opcode = 0;
   chip8->displaying = 0;
   chip8->sound_flag = 0;
+  chip8->timer_mutex = SDL_CreateMutex();
 
   // Initialize all addresses in memory to 0
   for (int addr = 0; addr < ADDRESS_COUNT; addr++) {

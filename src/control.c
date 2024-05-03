@@ -1,7 +1,5 @@
 #include "control.h"
-#include "chip8-timer.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <SDL2/SDL_timer.h>
 #include <time.h>
 
 void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
@@ -76,13 +74,19 @@ void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
   char result;
   switch (nn) {
     case IO_LDTIME:
+      SDL_LockMutex(chip8->timer_mutex);
       chip8->V[x] = chip8->delay_timer;
+      SDL_UnlockMutex(chip8->timer_mutex);
       break;
     case IO_SDTIME:
+      SDL_LockMutex(chip8->timer_mutex);
       chip8->delay_timer = chip8->V[x];
+      SDL_UnlockMutex(chip8->timer_mutex);
       break;
     case IO_SSTIME:
+      SDL_LockMutex(chip8->timer_mutex);
       chip8->sound_timer = chip8->V[x];
+      SDL_UnlockMutex(chip8->timer_mutex);
       break;
     case IO_ADD_IDX:
       chip8->I += chip8->V[x];
@@ -216,33 +220,41 @@ void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
   }
 }
 
-int exec_cycle(struct Chip8 *const chip8, time_t timers[2]) {
-  char play_sound = 0;
-
-  // TODO - maybe make this loop separately on a different thread,
-  // and add a mutex for each timer?
-  decrement_timer(&chip8->delay_timer, timers, NULL);
-  decrement_timer(&chip8->sound_timer, timers + 1, &play_sound);
-
+int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
+  // reset the play_sound flag
   unsigned short instruction = fetch_instruction(chip8);
 
   // TODO - get inputs here
   exec_instruction(chip8, instruction);
-  
-  // TODO - draw display here
-  // Alternatively - put display drawing in another separate thread,
-  // update at 60 fps
+
+  if (chip8->displaying) {
+    view_draw(view, (unsigned char**)chip8->screen);
+  }
   return 0;
 }
 
-int exec_program(struct Chip8 *const chip8) {
-  // NOTE - this isn't complete
-  time_t timers[2] = { time(NULL), time(NULL) };
+Uint32 decrement_timer(Uint32 interval, void *params) {
+  // TODO - figure out how to parse params
+
+  return interval;
+}
+
+int exec_program(struct Chip8 *const chip8, struct View *const view) {
+  // Setup timers here
 
   while (chip8->pc < ADDRESS_COUNT) {
-    exec_cycle(chip8, timers);
-    instruction_sleep();
+    exec_cycle(chip8, view);
+    // calculate the timing to sleep in nanoseconds and wait that long before running the next instruction
+    
+    // using nanosleep because it can achieve a much better precision than SDL's delay function
+    // (SDL2 has ~10ms precision, while nanosleep has around us precision), needs about ~1.3ms precision
+    struct timespec sleep_val;
+    sleep_val.tv_sec = 0;
+    sleep_val.tv_nsec = (long)(1.0 / INSTRUCTION_FREQUENCY * 1000000000);
+    nanosleep(&sleep_val, &sleep_val); 
   }
+
+  // destroy timers here
 
   fprintf(stderr, "Error: this program is not complete\n");
   return -1;
