@@ -65,7 +65,26 @@
 // TODO - this can be generalized more - all of the instructions
 // store results in VX, maybe this can be changed into a function that just takes in the ALU op
 // and params, and outputs the result (maybe also take in an `ovf` pointer)
+// `chip8`: the chip8 processor on which the ALU operation will be executed
+// `x`: the 4-bit number taken from the 2nd hex digit of the instruction
+// `y`: the 4-bit number taken from the 3rd hex digit of the instruction
+// `n`: the 4-bit number taken from the 4th (last) hex digit of the instruction
 void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n);
+
+// Execute the display instruction for the CHIP-8.
+// NOTE: This does not actually draw and pixels through SDL. It will update the
+// draw frame (buffer?) and the draw flag of the CHIP-8. This allows more flexibility
+// and separation between control logic and view logic.
+// `chip8`: the chip8 processor on which the display instruction will be executed
+// `x`: the 4-bit number taken from the 2nd hex digit of the instruction
+// `y`: the 4-bit number taken from the 3rd hex digit of the instruction
+// `n`: the 4-bit number taken from the 4th (last) hex digit of the instruction
+void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n);
+
+// Execute an IO instruction for the CHIP-8.
+// `x`: the 4-bit number taken from the 2nd hex digit of the instruction
+// `nn`: the 8-bit number taken from the 3rd and 4th (last 2) hex digits of the instruction
+void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn);
 
 // Execute a single fetch-decode-execute cycle for an instruction on the CHIP-8 system
 // `chip8`: the chip8 processor on which a cycle will be executed 

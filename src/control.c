@@ -70,6 +70,21 @@ void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, u
   }
 }
 
+// Gets the first currently pressed key it can find, setting the out parameter
+// to the first pressed key. NOTE - idk if this is a correct implementation?
+// - 
+char get_pressed_key(struct Chip8 *const chip8, char* key) {
+  char found = 0;
+  for (unsigned char curr_key = 0; curr_key < KEY_COUNT; curr_key++) {
+    if (chip8->key[curr_key]) {
+      found = 1;
+      *key = curr_key;
+      break;
+    }
+  }
+  return found;
+}
+
 void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
   char result;
   switch (nn) {
@@ -95,7 +110,13 @@ void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
       chip8->I = chip8->I & 0x0FFF;
       break;
     case IO_GET_KEY:
-      // TODO - implement
+      if (!get_pressed_key(chip8, &result)) {
+        chip8->sp -= 2;
+      } else {
+        // technically converts from char to unsigned char, but the keys go
+        // from 0-16 so this isn't really an issue
+        chip8->V[x] = result;
+      }
       break;
     case IO_CHAR:
       // calculate font location of the specific character X in memory
@@ -122,6 +143,7 @@ void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
   }
 }
 
+// Reset all pixels on a CHIP-8's screen to be blank
 void clear_screen(struct Chip8 *const chip8) {
   for (int y = 0; y < DISPLAY_HEIGHT; y++) {
     for (int x = 0; x < DISPLAY_WIDTH; x++) {
@@ -208,7 +230,6 @@ void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
       exec_display(chip8, x, y, n);
       break;
     case OP_BKEY:
-      // TODO: handle these operators
       // Skip 1 instruction if either "skip if pressed" or "skip if not pressed" are being used
       if ((nn == 0x9E && chip8->key[x]) || (nn == 0xA1 && !chip8->key[x])) {
         chip8->pc += 2;
@@ -225,10 +246,17 @@ int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
   unsigned short instruction = fetch_instruction(chip8);
 
   // TODO - get inputs here
+  
+
   exec_instruction(chip8, instruction);
 
   if (chip8->displaying) {
     view_draw(view, (unsigned char**)chip8->screen);
+  }
+
+  if (chip8->sound_flag) {
+    // TODO - this doesn't work
+    play_sound();
   }
   return 0;
 }
