@@ -61,12 +61,13 @@
 #define IO_LMEM 0x65
 
 // Execute an ALU operation using the CHIP-8
+// `chip8`: the chip8 processor on which the alu instruction will be executed
 // TODO - this can be generalized more - all of the instructions
 // store results in VX, maybe this can be changed into a function that just takes in the ALU op
 // and params, and outputs the result (maybe also take in an `ovf` pointer)
 void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n);
 
-// Execute a single fetch-decode-execute cycle of the CHIP-8 system
+// Execute a single fetch-decode-execute cycle for an instruction on the CHIP-8 system
 // `chip8`: the chip8 processor on which a cycle will be executed 
 // `view`: the object used to display the state of the CHIP-8 to the user
 int exec_cycle(struct Chip8 *const chip8, struct View *const view);

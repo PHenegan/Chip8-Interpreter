@@ -233,14 +233,31 @@ int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
   return 0;
 }
 
-Uint32 decrement_timer(Uint32 interval, void *params) {
-  // TODO - figure out how to parse params
+Uint32 decrement_timers(Uint32 interval, void *params) {
+  struct Chip8* chip8 = (struct Chip8*)params;
+  int result = SDL_LockMutex(chip8->timer_mutex);
+  
+  // if there is an error, ignore timers and print an error message in the console
+  if (result) {
+    fprintf(stderr, "Error: unable to decrement timer\n");
+    return interval;
+  }
+  if (chip8->sound_timer > 0) {
+    chip8->sound_timer--;
+    chip8->sound_flag = 1;
+  }
+  if (chip8->delay_timer > 0) {
+    chip8->delay_timer--;
+  }
+  SDL_UnlockMutex(chip8->timer_mutex);
 
   return interval;
 }
 
 int exec_program(struct Chip8 *const chip8, struct View *const view) {
-  // Setup timers here
+  // Timers decrement every second, and the sound timer will update the chip8's
+  // sound flag to indicate when a sound should be played
+  SDL_TimerID timer = SDL_AddTimer(1000, decrement_timers, chip8);
 
   while (chip8->pc < ADDRESS_COUNT) {
     exec_cycle(chip8, view);
@@ -254,7 +271,7 @@ int exec_program(struct Chip8 *const chip8, struct View *const view) {
     nanosleep(&sleep_val, &sleep_val); 
   }
 
-  // destroy timers here
+  SDL_RemoveTimer(timer);
 
   fprintf(stderr, "Error: this program is not complete\n");
   return -1;

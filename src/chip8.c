@@ -1,6 +1,5 @@
 #include "chip8.h"
 #include <fcntl.h>
-#include <time.h>
 #include <unistd.h>
 
 
