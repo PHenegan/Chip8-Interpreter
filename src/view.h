@@ -8,7 +8,7 @@ struct View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const cha
 int view_draw(struct View *const view, unsigned char **screen);
 
 // TODO - implement and fix parameters
-int play_sound();
+int view_playsound();
 
 // TODO - implement and fix parameters
 int get_user_input();
