@@ -33,6 +33,16 @@ struct View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const cha
   return view;
 }
 
+int view_playSound() {
+  // TODO - implement
+  return -1;
+}
+
+int view_getInput() {
+  // TODO - implement
+  return -1;
+}
+
 int view_draw(struct View *const view, unsigned char **screen) {
   // set color to black and clear the screen
   SDL_SetRenderDrawColor(view->renderer, 0, 0, 0, 255);

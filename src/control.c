@@ -256,7 +256,7 @@ int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
 
   if (chip8->sound_flag) {
     // TODO - this doesn't work
-    play_sound();
+    view_playSound();
   }
   return 0;
 }

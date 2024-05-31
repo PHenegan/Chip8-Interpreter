@@ -8,10 +8,10 @@ struct View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const cha
 int view_draw(struct View *const view, unsigned char **screen);
 
 // TODO - implement and fix parameters
-int view_playsound();
+int view_playSound();
 
 // TODO - implement and fix parameters
-int get_user_input();
+int view_getInput();
 
 void view_destroy(struct View *view);
 
