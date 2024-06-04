@@ -1,7 +1,9 @@
 #include "chip8.h"
 #include "control.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_stdinc.h>
 #include <time.h>
+#include <unistd.h>
 #include "view.h"
 
 int main(int argc, char* argv[]) {

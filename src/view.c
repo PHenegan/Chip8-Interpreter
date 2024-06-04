@@ -1,8 +1,9 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_video.h>
 #include <stdlib.h>
-#include "SDL2/SDL_render.h"
-#include "SDL2/SDL_video.h"
 #include "view.h"
+#include "key-bindings.h"
 
 struct View {
   struct SDL_Window* window;
@@ -38,12 +39,21 @@ int view_playSound() {
   return -1;
 }
 
-int view_getInput() {
-  // TODO - implement
-  return -1;
+int view_getInput(unsigned char* const keys, const int key_count) {
+  SDL_PumpEvents();
+  const Uint8* keyboard_state = SDL_GetKeyboardState(NULL);
+  
+  // Loop through keys and update them based on the state of
+  // the keys on the keyboard
+  // see key-bindings.h for CHIP-8 keybindings
+  for (int i = 0; i < key_count; i++) {
+    keys[i] = keyboard_state[BINDINGS[i]];
+  }
+
+  return 0;
 }
 
-int view_draw(struct View *const view, unsigned char **screen) {
+int view_draw(struct View *const view, unsigned char **const screen) {
   // set color to black and clear the screen
   SDL_SetRenderDrawColor(view->renderer, 0, 0, 0, 255);
   SDL_RenderClear(view->renderer);
@@ -71,4 +81,6 @@ int view_draw(struct View *const view, unsigned char **screen) {
 void view_destroy(struct View *view) {
   SDL_DestroyWindow(view->window);
   SDL_DestroyRenderer(view->renderer);
+
+  free(view);
 }

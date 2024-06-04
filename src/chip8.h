@@ -38,16 +38,22 @@ struct Chip8 {
   char displaying;
 };
 
-// Load the a program into memory from the given file
+// Load the a program into memory from the given file, returning 0 if successful
+// `chip8`: the CHIP-8 system to load the program into
+// `file`: the file path of the binary program to load
 int load_program(struct Chip8 *const chip8, char *const file);
 
 // set values in the CHIP-8 system to an initial beginning state
+// `chip8`: the CHIP-8 system to initialize
 void initialize_system(struct Chip8 *const chip8);
 
 // Load a system font into memory
+// `chip8`: the CHIP-8 system to load the font into
 void load_font(struct Chip8 *const chip8);
 
-// Get the next instruction and increment the program_counter by two
+// Get the next instruction and increment the program_counter by two.
+// Returns the next instruction.
+// `chip8`: the CHIP-8 system to fetch an instruction for
 unsigned short fetch_instruction(struct Chip8 *const chip8);
 
 #endif

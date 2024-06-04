@@ -63,7 +63,7 @@ void load_font(struct Chip8 *chip8) {
   // "10001"
   // "10001"
   // "11111"
-  // which draws the shape of a 0 (note the second bit is completely ignored and always 0)
+  // which draws the shape of a 0 (note the second hex digit is completely ignored and always 0)
   char font[] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 1
     0x20, 0x60, 0x20, 0x20, 0x70, // 2

@@ -72,7 +72,6 @@ void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, u
 
 // Gets the first currently pressed key it can find, setting the out parameter
 // to the first pressed key. NOTE - idk if this is a correct implementation?
-// - 
 char get_pressed_key(struct Chip8 *const chip8, char* key) {
   char found = 0;
   for (unsigned char curr_key = 0; curr_key < KEY_COUNT; curr_key++) {
@@ -170,7 +169,6 @@ void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
         // NOTE - I don't think it's necessary to overwrite the stack value?
         chip8->pc = chip8->stack[chip8->sp];
         chip8->sp--;
-        // call return
       }
       break;
     case OP_JUMP:
@@ -245,8 +243,10 @@ int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
   // reset the play_sound flag
   unsigned short instruction = fetch_instruction(chip8);
 
-  // TODO - get inputs here
-  
+  int error = view_getInput(chip8->key, KEY_COUNT);
+  if (error) {
+    return error;
+  }
 
   exec_instruction(chip8, instruction);
 
@@ -254,9 +254,21 @@ int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
     view_draw(view, (unsigned char**)chip8->screen);
   }
 
-  if (chip8->sound_flag) {
+  // Copy the flag to avoid doing anything which takes time while
+  // the mutex lock is acquired.
+  unsigned char play_sound;
+  error = SDL_LockMutex(chip8->timer_mutex);
+  if (error) {
+    fprintf(stderr, "error: Could not acquire timer mutex\n");
+    return error;
+  }
+  play_sound = chip8->sound_flag;
+  SDL_UnlockMutex(chip8->timer_mutex);
+  
+  if (play_sound) {
     // TODO - this doesn't work
     view_playSound();
+    chip8->sound_flag = 0;
   }
   return 0;
 }
