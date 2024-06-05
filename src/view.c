@@ -50,26 +50,43 @@ int view_getInput(unsigned char* const keys, const int key_count) {
     keys[i] = keyboard_state[BINDINGS[i]];
   }
 
+  int quit = 1;
+  for (int i = 0; i < EXIT_SIZE; i++) {
+    quit = quit & keyboard_state[EXIT_HOTKEY[i]];
+  }
+  if (quit) {
+    printf("escape key pressed, exiting...\n");
+    exit(0);
+  }
+
   return 0;
 }
 
-int view_draw(struct View *const view, unsigned char **const screen) {
+int view_draw(struct View *const view, unsigned char *const screen) {
   // set color to black and clear the screen
   SDL_SetRenderDrawColor(view->renderer, 0, 0, 0, 255);
   SDL_RenderClear(view->renderer);
   // set color to white for drawing the pixels
-  SDL_SetRenderDrawColor(view->renderer, 255, 255, 255, 255);
-
 
   for (int row = 0; row < view->tiles_height; row++) {
     for (int col = 0; col < view->tiles_width; col++) {
       // if the pixel in the screen is on, render a white square in the correct location
-      if (screen[row][col]) {
+      if (screen[row * view->tiles_width + col]) {
+        SDL_SetRenderDrawColor(view->renderer, 255, 255, 255, 255);
         SDL_Rect rect;
         rect.x = col * view->tile_size;
         rect.y = row * view->tile_size;
         rect.w = view->tile_size;
         rect.h = view->tile_size;
+        SDL_RenderFillRect(view->renderer, &rect);
+      }
+      else {
+        SDL_SetRenderDrawColor(view->renderer, 50, 50, 50, 255);
+        SDL_Rect rect;
+        rect.x = col * view->tile_size;
+        rect.y = row * view->tile_size;
+        rect.w = (int)view->tile_size * 0.1;
+        rect.h = (int)view->tile_size * 0.1;
         SDL_RenderFillRect(view->renderer, &rect);
       }
     }

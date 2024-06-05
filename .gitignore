@@ -5,3 +5,6 @@ Makefile
 
 # direnv temp files
 .direnv/
+
+# CHIP-8 test ROMs
+*.ch8

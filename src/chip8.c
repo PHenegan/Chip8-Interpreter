@@ -32,7 +32,7 @@ void initialize_system(struct Chip8 *chip8) {
   // Initialize each pixel in the screen to 0
   for (int y = 0; y < DISPLAY_HEIGHT; y++) {
     for (int x = 0; x < DISPLAY_WIDTH; x++) {
-      chip8->screen[y][x] = 0;
+      chip8->screen[y * DISPLAY_WIDTH + x] = 0;
     }
   }
 
@@ -94,12 +94,11 @@ unsigned short fetch_instruction(struct Chip8 *const chip8) {
     return -1;
   }
   // update the opcode, which is the first 4 bits of the instruction and the next address in memory
-  chip8->opcode = chip8->memory[chip8->pc] >> 1;
-
+  chip8->opcode = (chip8->memory[chip8->pc] >> 4);
+  
   // combine the next two addresses in memory into the full instruction
   // using bitshifting and a bitwise or
-  unsigned short result = chip8->opcode << 8 | chip8->memory[chip8->pc + 1];
-   
+  unsigned short result = chip8->memory[chip8->pc] << 8 | chip8->memory[chip8->pc + 1];
   chip8->pc += 2;
   return result;
 }

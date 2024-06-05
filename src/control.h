@@ -94,6 +94,8 @@ int exec_cycle(struct Chip8 *const chip8, struct View *const view);
 // Execute the program currently stored in the CHIP-8's memory
 // `chip8`: the chip8 processor to load the program from
 // `view`: the object used to display the state of the CHIP-8 to the user
-int exec_program(struct Chip8 *chip8, struct View *const view);
+// `debug`: a flag for whether or not the program should be stepped through manually,
+//          one cycle at a time
+int exec_program(struct Chip8 *chip8, struct View *const view, int debug);
 
 #endif

@@ -32,4 +32,10 @@ const SDL_Scancode BINDINGS[] = {
   SDL_SCANCODE_V, // F
 };
 
+#define EXIT_SIZE 2
+const SDL_Scancode EXIT_HOTKEY[] = {
+  SDL_SCANCODE_LCTRL,
+  SDL_SCANCODE_C
+};
+
 #endif

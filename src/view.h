@@ -17,7 +17,7 @@ struct View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const cha
 // `view`: the struct storing internal view information
 // `screen`: a 2D grid representing the state (on or off) of each pixel
 //           in the CHIP-8.
-int view_draw(struct View *const view, unsigned char **const screen);
+int view_draw(struct View *const view, unsigned char *const screen);
 
 // TODO - implement and fix parameters
 int view_playSound();

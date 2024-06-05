@@ -1,4 +1,7 @@
 #include "control.h"
+#include "chip8.h"
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_timer.h>
 #include <time.h>
 
@@ -43,7 +46,7 @@ void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsig
       // TODO - make configurable with a flag for SUPER-CHIP and CHIP-48 programs
       // shift VX left by 1, storing the shifted bit into VF
       chip8->V[0xF] = chip8->V[x] & (unsigned char)0x8000; // isolate the first bit
-      chip8->V[x] = chip8->V[x] << 1; 
+      chip8->V[x] = chip8->V[x] << 1;
       break;
   }
 }
@@ -57,15 +60,15 @@ void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, u
   for (int row = 0; row < n && y_pos + row < DISPLAY_HEIGHT; row++) {
     unsigned char draw_byte = chip8->memory[chip8->I + row];
     // 8 is hardcoded because bytes are used, so at most 8 pixels can be set.
-    unsigned char target_bit =  1;
+    unsigned char target_bit =  0x80;
     for (int col = 0; col < 8 && x_pos + col < DISPLAY_WIDTH; col++) {
-      unsigned char* pixel = &chip8->screen[y_pos + row][x_pos + col];
-      unsigned char new_value = draw_byte & target_bit; 
+      unsigned char* pixel = &chip8->screen[(y_pos + row) * DISPLAY_WIDTH + x_pos + col];
+      unsigned char new_value = draw_byte & target_bit;
       if (*pixel && !new_value) {
         chip8->V[0xF] = 1;
       }
       *pixel = new_value;
-      target_bit = target_bit << 1;
+      target_bit = target_bit >> 1;
     }
   }
 }
@@ -146,17 +149,18 @@ void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
 void clear_screen(struct Chip8 *const chip8) {
   for (int y = 0; y < DISPLAY_HEIGHT; y++) {
     for (int x = 0; x < DISPLAY_WIDTH; x++) {
-      chip8->screen[y][x] = 0;
+      chip8->screen[y * DISPLAY_WIDTH + x] = 0;
     }
   }
 }
 
 void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
+  // OP (4 bits), x (4 bits), y (4 bits), n (4 bits)
   unsigned short nnn = instruction & OP_NNN;
   unsigned char nn = instruction & OP_NN;
   unsigned char n = instruction & OP_N;
-  unsigned char x = (instruction & OP_X) >> 2;
-  unsigned char y = (instruction & OP_Y) >> 1;
+  unsigned char x = (instruction & OP_X) >> 8;
+  unsigned char y = (instruction & OP_Y) >> 4;
   chip8->displaying = 0;
 
   switch (chip8->opcode) {
@@ -249,9 +253,9 @@ int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
   }
 
   exec_instruction(chip8, instruction);
-
+  
   if (chip8->displaying) {
-    view_draw(view, (unsigned char**)chip8->screen);
+    view_draw(view, chip8->screen);
   }
 
   // Copy the flag to avoid doing anything which takes time while
@@ -294,11 +298,57 @@ Uint32 decrement_timers(Uint32 interval, void *params) {
   return interval;
 }
 
-int exec_program(struct Chip8 *const chip8, struct View *const view) {
+int exec_debug(struct Chip8 *const chip8, struct View *const view) {
+  // Timers decrement every second, and the sound timer will update the chip8's
+  // sound flag to indicate when a sound should be played
+  SDL_TimerID timer = SDL_AddTimer(1000, decrement_timers, chip8);
+  int manual = 1;
+  while (chip8->pc < ADDRESS_COUNT) {
+    exec_cycle(chip8, view);
+    // calculate the timing to sleep in nanoseconds and wait that long before running the next instruction
+    
+    // using nanosleep because it can achieve a much better precision than SDL's delay function
+    // (SDL2 has ~10ms precision, while nanosleep has around us precision), needs about ~1.3ms precision
+    struct timespec sleep_val;
+    sleep_val.tv_sec = 0;
+    sleep_val.tv_nsec = (long)(1.0 / INSTRUCTION_FREQUENCY * 1000000000);
+    nanosleep(&sleep_val, &sleep_val);
+
+    int key_count;
+    SDL_PumpEvents();
+    const Uint8* keystate = SDL_GetKeyboardState(&key_count);
+    while (!keystate[SDL_SCANCODE_N]) {
+      SDL_PumpEvents();
+      if (keystate[SDL_SCANCODE_ESCAPE]) {
+        exit(0);
+      }
+      if (keystate[SDL_SCANCODE_RETURN]) {
+        manual = !manual;
+        SDL_Delay(500);
+        break;
+      }
+      if (!manual) {
+        break;
+      }
+    }
+    if (manual) {
+      SDL_Delay(1000);
+    }
+  }
+
+  SDL_RemoveTimer(timer);
+
+  fprintf(stderr, "Error: this program is not complete\n");
+  return -1;
+}
+
+int exec_program(struct Chip8 *const chip8, struct View *const view, int debug) {
   // Timers decrement every second, and the sound timer will update the chip8's
   // sound flag to indicate when a sound should be played
   SDL_TimerID timer = SDL_AddTimer(1000, decrement_timers, chip8);
 
+  int manual = 1; // flag for manually stepping through instructions in debug mode
+  
   while (chip8->pc < ADDRESS_COUNT) {
     exec_cycle(chip8, view);
     // calculate the timing to sleep in nanoseconds and wait that long before running the next instruction
@@ -309,6 +359,27 @@ int exec_program(struct Chip8 *const chip8, struct View *const view) {
     sleep_val.tv_sec = 0;
     sleep_val.tv_nsec = (long)(1.0 / INSTRUCTION_FREQUENCY * 1000000000);
     nanosleep(&sleep_val, &sleep_val); 
+
+    // additional debug step for manually stepping through instructions
+    if (debug) {
+      int key_count;
+      SDL_PumpEvents();
+      const Uint8* keystate = SDL_GetKeyboardState(&key_count);
+      while (!keystate[SDL_SCANCODE_N]) {
+        SDL_PumpEvents();
+        if (keystate[SDL_SCANCODE_RETURN]) {
+          manual = !manual;
+          SDL_Delay(500);
+          break;
+        }
+        if (!manual) {
+          break;
+        }
+      }
+      if (manual) {
+        SDL_Delay(1000);
+      }
+    }
   }
 
   SDL_RemoveTimer(timer);
@@ -316,3 +387,4 @@ int exec_program(struct Chip8 *const chip8, struct View *const view) {
   fprintf(stderr, "Error: this program is not complete\n");
   return -1;
 }
+

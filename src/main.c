@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
   // using calloc to make sure everything is 0-initialized
   struct Chip8 *chip8 = calloc(1, sizeof(struct Chip8));
 
-  struct View *view = view_init(DISPLAY_WIDTH, DISPLAY_HEIGHT, 4, "CHIP-8 Interpreter");
+  struct View *view = view_init(DISPLAY_WIDTH, DISPLAY_HEIGHT, 15, "CHIP-8 Interpreter");
 
   srand(time(NULL));
   // ensure a file was passed in
@@ -20,15 +20,15 @@ int main(int argc, char* argv[]) {
     exit(-1);
   }
 
+  initialize_system(chip8);
+
   // try to load the file in
   if (load_program(chip8, argv[1]) == -1) {
     fprintf(stderr, "Unable to load program - error loading file");
     exit(-1);
   }
 
-  load_font(chip8);
-  
-  int result = exec_program(chip8, view);
+  int result = exec_program(chip8, view, 0);
   
   free(chip8);
   return result;
