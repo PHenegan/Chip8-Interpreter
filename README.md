@@ -17,6 +17,20 @@ Computer Systems class and Digital Design class (the latter is about the electro
 This is also a good starting point before moving on to other retro interpreters/emulators,
 and seemed interesting to learn about.
 
+## What Works? What's Left?
+- Running the test IBM instruction works.
+- Other (more advanced) programs are currently untested, though I am reasonably confident that
+  most of the instructions work as intended.
+- Ideally I will add flexibility for other behavior (some CHIP-8 instructions are ambiguous and
+  have conflicting implementations, so adding toggles and options would allow for flexibility there)
+- The CHIP-8 sound timer works but currently doesn't actually play any sound. I want to see if I can
+  play a tone or something directly through SDL but I may have to find an MP3 or WAV file for it
+- Right now the controls are set in a header file which is relatively easy to configure, but
+  adding support for something like a json or yaml config file would allow more flexibility by
+  offering configuration at runtime instead of compile-time.
+- I may eventually add CHIP-48 or SUPER-CHIP support, though honestly that is pretty unlikely
+  since I would likely want to move on to other emulators/ISA interpreters.
+
 ## Setup
 
 This interpreter is written in C using GCC. The only requirements for the emulator are a
@@ -55,7 +69,13 @@ This will create the executable file `./build/chip8` which can be run as a progr
 
 In order to build the interpreter, start by opening a terminal window in the project directory. 
 
-You can run `make chip8`. Then, to run the program, simply type `./chip8`.
+You can run `make chip8`. Then, to run the program, simply type `./chip8 [program-filepath-here]`.
+
+To run the program in debug mode, you can execute the program with the `--debug` command line argument.
+This will allow you to step through the program manually (press `N`), and pause/unpause the manual-mode with `Enter`.
+
+In either debug or regular mode, holding `Ctrl + C` will stop the program from running, which is useful in the event
+that the program gets stuck.
 
 ## Credit
 
