@@ -21,15 +21,25 @@ int main(int argc, char* argv[]) {
   }
 
   initialize_system(chip8);
+  int debug = 0;
+  char* filepath = NULL;
+  for (int i = 0; i < argc; i++) {
+    if (strncmp(argv[i], "--debug", 8) == 0) {
+      debug = 1;
+    } else {
+      filepath = argv[i];
+    }
+  }
 
   // try to load the file in
-  if (load_program(chip8, argv[1]) == -1) {
+  if (filepath == NULL || load_program(chip8, filepath) == -1) {
     fprintf(stderr, "Unable to load program - error loading file");
     exit(-1);
   }
 
-  int result = exec_program(chip8, view, 0);
-  
+  int result = exec_program(chip8, view, debug);
+ 
+  view_destroy(view);
   free(chip8);
   return result;
 }
