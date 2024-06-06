@@ -13,7 +13,7 @@ struct View {
   int tiles_height;
 };
 
-struct View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const char *title) {
+View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const char *title) {
   struct View *view = malloc(sizeof(struct View));
 
   // calculate dimensions using the count and size of tiles, which are way smaller
@@ -62,7 +62,7 @@ int view_getInput(unsigned char* const keys, const int key_count) {
   return 0;
 }
 
-int view_draw(struct View *const view, unsigned char *const screen) {
+int view_draw(View *const view, unsigned char *const screen) {
   // set color to black and clear the screen
   SDL_SetRenderDrawColor(view->renderer, 0, 0, 0, 255);
   SDL_RenderClear(view->renderer);
@@ -95,7 +95,7 @@ int view_draw(struct View *const view, unsigned char *const screen) {
   return 0;
 }
 
-void view_destroy(struct View *view) {
+void view_destroy(View *view) {
   SDL_DestroyWindow(view->window);
   SDL_DestroyRenderer(view->renderer);
 

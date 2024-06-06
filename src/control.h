@@ -69,7 +69,7 @@
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `y`: the 4-bit number taken from the 3rd hex digit of the instruction
 // `n`: the 4-bit number taken from the 4th (last) hex digit of the instruction
-void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n);
+void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n);
 
 // Execute the display instruction for the CHIP-8.
 // NOTE: This does not actually draw and pixels through SDL. It will update the
@@ -79,23 +79,23 @@ void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsig
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `y`: the 4-bit number taken from the 3rd hex digit of the instruction
 // `n`: the 4-bit number taken from the 4th (last) hex digit of the instruction
-void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n);
+void exec_display(Chip8 *const chip8, uint8 x, uint8 y, uint8 n);
 
 // Execute an IO instruction for the CHIP-8.
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `nn`: the 8-bit number taken from the 3rd and 4th (last 2) hex digits of the instruction
-void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn);
+void exec_io(Chip8 *const chip8, uint8 x, uint8 nn);
 
 // Execute a single fetch-decode-execute cycle for an instruction on the CHIP-8 system
 // `chip8`: the chip8 processor on which a cycle will be executed 
 // `view`: the object used to display the state of the CHIP-8 to the user
-int exec_cycle(struct Chip8 *const chip8, struct View *const view);
+int exec_cycle(Chip8 *const chip8, struct View *const view);
 
 // Execute the program currently stored in the CHIP-8's memory
 // `chip8`: the chip8 processor to load the program from
 // `view`: the object used to display the state of the CHIP-8 to the user
 // `debug`: a flag for whether or not the program should be stepped through manually,
 //          one cycle at a time
-int exec_program(struct Chip8 *chip8, struct View *const view, int debug);
+int exec_program(Chip8 *chip8, struct View *const view);
 
 #endif

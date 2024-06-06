@@ -18,9 +18,9 @@ This is also a good starting point before moving on to other retro interpreters/
 and seemed interesting to learn about.
 
 ## What Works? What's Left?
-- Running the test IBM instruction works.
-- Other (more advanced) programs are currently untested, though I am reasonably confident that
-  most of the instructions work as intended.
+- Running the test IBM instruction works. It looks like random functionality might be broken,
+  though I'm not completely sure yet. I think my immediate priority is improving the debug mode
+  in order to make testing a lot easier. I'm not completely sure how I want to handle this yet
 - Ideally I will add flexibility for other behavior (some CHIP-8 instructions are ambiguous and
   have conflicting implementations, so adding toggles and options would allow for flexibility there)
 - The CHIP-8 sound timer works but currently doesn't actually play any sound. I want to see if I can

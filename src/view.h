@@ -1,7 +1,7 @@
 #ifndef VIEW
 #define VIEW
 
-struct View;
+typedef struct View View;
 
 // Initialize a View renderer, returning it upon completion.
 // NOTE: This function uses memory allocation. It is expected that `view_destroy` will be called

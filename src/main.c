@@ -9,9 +9,7 @@
 int main(int argc, char* argv[]) {
   SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_TIMER);
   // using calloc to make sure everything is 0-initialized
-  struct Chip8 *chip8 = calloc(1, sizeof(struct Chip8));
-
-  struct View *view = view_init(DISPLAY_WIDTH, DISPLAY_HEIGHT, 15, "CHIP-8 Interpreter");
+  Chip8 *chip8 = calloc(1, sizeof(Chip8));
 
   srand(time(NULL));
   // ensure a file was passed in
@@ -21,11 +19,12 @@ int main(int argc, char* argv[]) {
   }
 
   initialize_system(chip8);
-  int debug = 0;
   char* filepath = NULL;
-  for (int i = 0; i < argc; i++) {
+  for (int i = 1; i < argc; i++) {
     if (strncmp(argv[i], "--debug", 8) == 0) {
-      debug = 1;
+      chip8->config.debug = 1;
+    } else if (strncmp(argv[i], "--old-shift", 12) == 0) {
+      chip8->config.jump_quirk = 1;
     } else {
       filepath = argv[i];
     }
@@ -37,7 +36,9 @@ int main(int argc, char* argv[]) {
     exit(-1);
   }
 
-  int result = exec_program(chip8, view, debug);
+  struct View *view = view_init(DISPLAY_WIDTH, DISPLAY_HEIGHT, 15, "CHIP-8 Interpreter", chip8->config.debug);
+  
+  int result = exec_program(chip8, view);
  
   view_destroy(view);
   free(chip8);

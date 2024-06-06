@@ -5,7 +5,7 @@
 #include <SDL2/SDL_timer.h>
 #include <time.h>
 
-void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
+void exec_alu(struct Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
   short result;
   switch (n) {
     case ALU_SET:
@@ -22,17 +22,19 @@ void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsig
       break;
     case ALU_ADD:
       result = chip8->V[x] + chip8->V[y];
-      chip8->V[x] = (unsigned char)result;
+      chip8->V[x] = (uint8)result;
       chip8->V[0xF] = result > 255;
       break;
     // SUB (VX - VY)
     case ALU_SUBY:
       result = chip8->V[x] - chip8->V[y];
-      chip8->V[x] = (unsigned char)result;
+      chip8->V[x] = (uint8)result;
       chip8->V[0xF] = result > chip8->V[x];
       break;
     case ALU_SRL:
-      // TODO - make configurable with a flag for SUPER-CHIP and CHIP-48 programs
+      if (chip8->config.legacy_shift) {
+        chip8->V[x] = chip8->V[y];
+      }
       // shift VX right by 1, storing the shifted bit into VF
       chip8->V[0xF] = chip8->V[x] & 1; // isolate the last bit
       chip8->V[x] = chip8->V[x] >> 1;
@@ -43,27 +45,29 @@ void exec_alu(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsig
       chip8->V[0xF] = chip8->V[x] > chip8->V[y];
       break;
     case ALU_SLL:
-      // TODO - make configurable with a flag for SUPER-CHIP and CHIP-48 programs
+      if (chip8->config.legacy_shift) {
+        chip8->V[x] = chip8->V[y];
+      }
       // shift VX left by 1, storing the shifted bit into VF
-      chip8->V[0xF] = chip8->V[x] & (unsigned char)0x8000; // isolate the first bit
+      chip8->V[0xF] = chip8->V[x] & (uint8)0x8000; // isolate the first bit
       chip8->V[x] = chip8->V[x] << 1;
       break;
   }
 }
 
-void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, unsigned char n) {
-  unsigned char x_pos = chip8->V[x] % DISPLAY_WIDTH;
-  unsigned char y_pos = chip8->V[y] % DISPLAY_HEIGHT;
+void exec_display(struct Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
+  uint8 x_pos = chip8->V[x] % DISPLAY_WIDTH;
+  uint8 y_pos = chip8->V[y] % DISPLAY_HEIGHT;
 
   chip8->V[0xF] = 0; // reset flag register
 
   for (int row = 0; row < n && y_pos + row < DISPLAY_HEIGHT; row++) {
-    unsigned char draw_byte = chip8->memory[chip8->I + row];
+    uint8 draw_byte = chip8->memory[chip8->I + row];
     // 8 is hardcoded because bytes are used, so at most 8 pixels can be set.
-    unsigned char target_bit =  0x80;
+    uint8 target_bit =  0x80;
     for (int col = 0; col < 8 && x_pos + col < DISPLAY_WIDTH; col++) {
-      unsigned char* pixel = &chip8->screen[(y_pos + row) * DISPLAY_WIDTH + x_pos + col];
-      unsigned char new_value = draw_byte & target_bit;
+      uint8* pixel = &chip8->screen[(y_pos + row) * DISPLAY_WIDTH + x_pos + col];
+      uint8 new_value = draw_byte & target_bit;
       if (*pixel && !new_value) {
         chip8->V[0xF] = 1;
       }
@@ -77,7 +81,7 @@ void exec_display(struct Chip8 *const chip8, unsigned char x, unsigned char y, u
 // to the first pressed key. NOTE - idk if this is a correct implementation?
 char get_pressed_key(struct Chip8 *const chip8, char* key) {
   char found = 0;
-  for (unsigned char curr_key = 0; curr_key < KEY_COUNT; curr_key++) {
+  for (uint8 curr_key = 0; curr_key < KEY_COUNT; curr_key++) {
     if (chip8->key[curr_key]) {
       found = 1;
       *key = curr_key;
@@ -87,7 +91,7 @@ char get_pressed_key(struct Chip8 *const chip8, char* key) {
   return found;
 }
 
-void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
+void exec_io(struct Chip8 *const chip8, uint8 x, uint8 nn) {
   char result;
   switch (nn) {
     case IO_LDTIME:
@@ -115,7 +119,7 @@ void exec_io(struct Chip8 *const chip8, unsigned char x, unsigned char nn) {
       if (!get_pressed_key(chip8, &result)) {
         chip8->sp -= 2;
       } else {
-        // technically converts from char to unsigned char, but the keys go
+        // technically converts from char to uint8, but the keys go
         // from 0-16 so this isn't really an issue
         chip8->V[x] = result;
       }
@@ -154,13 +158,13 @@ void clear_screen(struct Chip8 *const chip8) {
   }
 }
 
-void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
+void exec_instruction(Chip8 *const chip8, uint16 instruction) {
   // OP (4 bits), x (4 bits), y (4 bits), n (4 bits)
-  unsigned short nnn = instruction & OP_NNN;
-  unsigned char nn = instruction & OP_NN;
-  unsigned char n = instruction & OP_N;
-  unsigned char x = (instruction & OP_X) >> 8;
-  unsigned char y = (instruction & OP_Y) >> 4;
+  uint16 nnn = instruction & OP_NNN;
+  uint8 nn = instruction & OP_NN;
+  uint8 n = instruction & OP_N;
+  uint8 x = (instruction & OP_X) >> 8;
+  uint8 y = (instruction & OP_Y) >> 4;
   chip8->displaying = 0;
 
   switch (chip8->opcode) {
@@ -243,9 +247,9 @@ void exec_instruction(struct Chip8 *const chip8, unsigned short instruction) {
   }
 }
 
-int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
+int exec_cycle(Chip8 *const chip8, struct View *const view) {
   // reset the play_sound flag
-  unsigned short instruction = fetch_instruction(chip8);
+  uint16 instruction = fetch_instruction(chip8);
 
   int error = view_getInput(chip8->key, KEY_COUNT);
   if (error) {
@@ -260,7 +264,7 @@ int exec_cycle(struct Chip8 *const chip8, struct View *const view) {
 
   // Copy the flag to avoid doing anything which takes time while
   // the mutex lock is acquired.
-  unsigned char play_sound;
+  uint8 play_sound;
   error = SDL_LockMutex(chip8->timer_mutex);
   if (error) {
     fprintf(stderr, "error: Could not acquire timer mutex\n");
@@ -298,7 +302,7 @@ Uint32 decrement_timers(Uint32 interval, void *params) {
   return interval;
 }
 
-int exec_debug(struct Chip8 *const chip8, struct View *const view) {
+int exec_debug(Chip8 *const chip8, struct View *const view) {
   // Timers decrement every second, and the sound timer will update the chip8's
   // sound flag to indicate when a sound should be played
   SDL_TimerID timer = SDL_AddTimer(1000, decrement_timers, chip8);
@@ -342,7 +346,7 @@ int exec_debug(struct Chip8 *const chip8, struct View *const view) {
   return -1;
 }
 
-int exec_program(struct Chip8 *const chip8, struct View *const view, int debug) {
+int exec_program(Chip8 *const chip8, struct View *const view) {
   // Timers decrement every second, and the sound timer will update the chip8's
   // sound flag to indicate when a sound should be played
   SDL_TimerID timer = SDL_AddTimer(1000, decrement_timers, chip8);
@@ -361,7 +365,7 @@ int exec_program(struct Chip8 *const chip8, struct View *const view, int debug) 
     nanosleep(&sleep_val, &sleep_val); 
 
     // additional debug step for manually stepping through instructions
-    if (debug) {
+    if (chip8->config.debug) {
       int key_count;
       SDL_PumpEvents();
       const Uint8* keystate = SDL_GetKeyboardState(&key_count);

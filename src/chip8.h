@@ -20,40 +20,51 @@
 #define PROGRAM_START 0x200
 #define FONT_START 0x050
 
+typedef struct ConfigFlags {
+  int debug;
+  int legacy_shift;
+  int jump_quirk;
+  int legacy_indexing;
+} ConfigFlags;
+
+typedef unsigned char uint8;
+typedef unsigned short uint16;
+
 // Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
-struct Chip8 {
-  unsigned char memory[ADDRESS_COUNT];
-  unsigned char screen[DISPLAY_HEIGHT * DISPLAY_WIDTH];
-  unsigned char V[REGISTER_COUNT]; // registers
-  unsigned short I; // index register
-  unsigned short pc; // program counter (instruction pointer)
-  unsigned short stack[STACK_SIZE];
-  unsigned short sp; // stack pointer
+typedef struct Chip8 {
+  ConfigFlags config;
+  uint8 memory[ADDRESS_COUNT];
+  uint8 screen[DISPLAY_HEIGHT * DISPLAY_WIDTH];
+  uint8 V[REGISTER_COUNT]; // registers
+  uint16 I; // index register
+  uint16 pc; // program counter (instruction pointer)
+  uint16 stack[STACK_SIZE];
+  uint16 sp; // stack pointer
   SDL_mutex* timer_mutex;
-  unsigned char delay_timer;
-  unsigned char sound_timer;
+  uint8 delay_timer;
+  uint8 sound_timer;
   char sound_flag;
-  unsigned char opcode;
-  unsigned char key[KEY_COUNT];
+  uint8 opcode;
+  uint8 key[KEY_COUNT];
   char displaying;
-};
+} Chip8;
 
 // Load the a program into memory from the given file, returning 0 if successful
 // `chip8`: the CHIP-8 system to load the program into
 // `file`: the file path of the binary program to load
-int load_program(struct Chip8 *const chip8, char *const file);
+int load_program(Chip8 *const chip8, char *const file);
 
 // set values in the CHIP-8 system to an initial beginning state
 // `chip8`: the CHIP-8 system to initialize
-void initialize_system(struct Chip8 *const chip8);
+void initialize_system(Chip8 *const chip8);
 
 // Load a system font into memory
 // `chip8`: the CHIP-8 system to load the font into
-void load_font(struct Chip8 *const chip8);
+void load_font(Chip8 *const chip8);
 
 // Get the next instruction and increment the program_counter by two.
 // Returns the next instruction.
 // `chip8`: the CHIP-8 system to fetch an instruction for
-unsigned short fetch_instruction(struct Chip8 *const chip8);
+uint16 fetch_instruction(Chip8 *const chip8);
 
 #endif

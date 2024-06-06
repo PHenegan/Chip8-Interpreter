@@ -4,6 +4,12 @@
 
 
 void initialize_system(struct Chip8 *chip8) {
+  // Set defaults for config options
+  chip8->config.debug = 0;
+  chip8->config.jump_quirk = 0;
+  chip8->config.legacy_shift = 0;
+  chip8->config.legacy_indexing = 0;
+
   chip8->pc = PROGRAM_START;
   chip8->I = 0;
   chip8->sp = 0;
