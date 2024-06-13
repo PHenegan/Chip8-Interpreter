@@ -507,7 +507,7 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
         SDL_PumpEvents();
         if (keystate[SDL_SCANCODE_RETURN]) {
           manual = !manual;
-          SDL_Delay(500);
+          SDL_Delay(100);
           break;
         }
         if (!manual) {
@@ -515,7 +515,7 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
         }
       }
       if (manual) {
-        SDL_Delay(1000);
+        SDL_Delay(250);
       }
     }
   }
