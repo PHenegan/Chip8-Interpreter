@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
     exit(-1);
   }
 
-  struct View *view = view_init(DISPLAY_WIDTH, DISPLAY_HEIGHT, 15, "CHIP-8 Interpreter", chip8->config.debug);
+  struct View *view = view_init(DISPLAY_WIDTH, DISPLAY_HEIGHT, 15, "CHIP-8 Interpreter");
   
   int result = exec_program(chip8, view);
  

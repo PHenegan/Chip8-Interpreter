@@ -161,7 +161,7 @@ void exec_io(struct Chip8 *const chip8, uint8 x, uint8 nn) {
 
     case IO_GET_KEY:
       if (!get_pressed_key(chip8, &result)) {
-        log_msg = "no input pressed, instruction pointer decremented";
+        log_message("no input pressed, instruction pointer decremented", chip8);
         chip8->sp -= 2;
       } else {
         asprintf(&log_msg, "received pressed key %x", result);
@@ -240,6 +240,8 @@ void exec_instruction(Chip8 *const chip8, uint16 instruction) {
   uint8 x = (instruction & OP_X) >> 8;
   uint8 y = (instruction & OP_Y) >> 4;
   chip8->displaying = 0;
+  char* log_msg = NULL;
+  char* branch_msg;
 
   switch (chip8->opcode) {
     case OP_SYS:
@@ -249,75 +251,128 @@ void exec_instruction(Chip8 *const chip8, uint16 instruction) {
       }
       else if (instruction == OP_RET) {
         // NOTE - I don't think it's necessary to overwrite the stack value?
+        asprintf(&log_msg, "Return reached, setting pc to %d and decrementing sp to %d",
+                 chip8->stack[chip8->sp], chip8->sp - 1);
         chip8->pc = chip8->stack[chip8->sp];
         chip8->sp--;
       }
       break;
+
     case OP_JUMP:
+      asprintf(&log_msg, "Jump reached, setting pc to %d", nnn);
       chip8->pc = nnn; 
       break;
+
     case OP_CALL:
+      asprintf(&log_msg, "Call reached, adding pc (%d) to the stack and setting pc to %d",
+               chip8->pc, nnn);
       chip8->sp++;
       chip8->stack[chip8->sp] = chip8->pc;
       chip8->pc = nnn;
       break;
+
     case OP_BEQI:
-      // skip 1 instruction if VX == NN
+      branch_msg = "sides not equal, did not branch";
+      // skip 1 instruction if VX == NN 
       if (chip8->V[x] == nn) {
+        branch_msg = "sides equal, branching";
         chip8->pc += 2;
       }
+      asprintf(&log_msg, "BEQI - Comparing %d with %d: %s, pc: %d",
+               chip8->V[x], nn, branch_msg, chip8->pc);
       break;
+
       // skip 1 instruction if VX != NN
     case OP_BNEI:
+      branch_msg = "sides equal, did not branch";
       if (chip8->V[x] != nn) {
+        branch_msg = "sides not equal, branching";
         chip8->pc += 2;
       }
+      asprintf(&log_msg, "BNEI - Comparing %d with %d: %s, pc: %d",
+               chip8->V[x], nn, branch_msg, chip8->pc);
       break;
+    
     case OP_BEQ:
+      branch_msg = "sides not equal, did not branch";
       // skip 1 instruction if VX == VY
       if (chip8->V[x] == chip8->V[y]) {
+        branch_msg = "sides equal, branching";
         chip8->pc += 2;
       }
+      asprintf(&log_msg, "BEQ - Comparing %d with %d: %s, pc: %d",
+               chip8->V[x], chip8->V[y], branch_msg, chip8->pc);
       break;
+    
     case OP_BNE:
+      branch_msg = "sides equal, did not branch";
       // skip 1 instruction if VX != VY
       if (chip8->V[x] != chip8->V[y]) {
+        branch_msg = "sides not equal, branching";
         chip8->pc += 2;
       }
+      asprintf(&log_msg, "BNE - Comparing %d with %d: %s, pc: %d",
+               chip8->V[x], chip8->V[y], branch_msg, chip8->pc);
       break;
+    
     case OP_LI:
+      asprintf(&log_msg, "LI - Setting V[%d] to immediate value %d", x, nn);
       chip8->V[x] = nn;
       break;
+    
     case OP_ADDI:
+      asprintf(&log_msg, "ADDI - V[%d] = %d + %d (%d)", x, chip8->V[x], nn, chip8->V[x] + nn);
       chip8->V[x] += nn; 
       break;
+
     case OP_ALU:
       exec_alu(chip8, x, y, n);
       break;
+
     case OP_SET_IDX:
+      asprintf(&log_msg, "setting I register (%d) to %d", chip8->I, nnn);
       chip8->I = nnn;
       break;
+
     case OP_JO:
+      asprintf(&log_msg, "JUMP 0 - setting pc to %d + %d (%d)",
+               nnn, chip8->V[0], nnn + chip8->V[0]);
       // TODO: make bug configurable for compatability with SUPER-CHIP and CHIP-48 programs
       chip8->pc = nnn + chip8->V[0];
       break;
+
     case OP_RAND:
+      
       // generate a random number, do a binary AND with NN, and load it into VX
-      chip8->V[x]= nn & rand();
+      // NOTE - this is bad but I don't want to make a new variable
+      n = rand();
+      asprintf(&log_msg, "RAND - setting V[%d] to %d (rand) & %d", x, n, nn);
+      chip8->V[x]= nn & n;
       break;
+    
     case OP_DISPLAY:
       chip8->displaying = 1;
       exec_display(chip8, x, y, n);
       break;
+    
     case OP_BKEY:
+      branch_msg = "key not pressed, did not branch";
       // Skip 1 instruction if either "skip if pressed" or "skip if not pressed" are being used
       if ((nn == 0x9E && chip8->key[x]) || (nn == 0xA1 && !chip8->key[x])) {
+        branch_msg = "key pressed, branching";
         chip8->pc += 2;
       }
+      asprintf(&log_msg, "BKEY - Checking if key %x is pressed: %s, pc: %d",
+               x, branch_msg, chip8->pc);
       break;
+    
     case OP_IO:
       exec_io(chip8, x, nn);
       break;
+  }
+
+  if (log_msg != NULL) {
+    log_message(log_msg, chip8);
   }
 }
 
@@ -331,7 +386,7 @@ int exec_cycle(Chip8 *const chip8, struct View *const view) {
   uint16 instruction = fetch_instruction(chip8);
   
   char* log_msg;
-  asprintf(&log_msg, "fetched instruction %04x", instruction);
+  asprintf(&log_msg, "fetched instruction %04x at address %d", instruction, chip8->pc - 2);
   log_message(log_msg, chip8);
   free(log_msg);
 
