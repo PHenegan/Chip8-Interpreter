@@ -49,9 +49,10 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
     case ALU_SUBY:
       result = chip8->V[x] - chip8->V[y];
       asprintf(&log_msg, "V[%d] = %d - %d = %d, ovf = %d", 
-               x, chip8->V[x], chip8->V[y], (uint8)result, (uint8)result > chip8->V[y]); 
+               x, chip8->V[x], chip8->V[y], (uint8)result, (uint8)result > chip8->V[x]); 
+      // The overflow flag for subtraction is actually the opposite of what you expect
+      chip8->V[0xF] = chip8->V[y] <= chip8->V[x];
       chip8->V[x] = (uint8)result;
-      chip8->V[0xF] = (uint8)result > chip8->V[x];
       break;
     case ALU_SRL:
       if (chip8->config.legacy_shift) {
@@ -64,18 +65,21 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
       break;
     // SUB (VY - VX)
     case ALU_SUBX:
-      asprintf(&log_msg, "V[%d] = %d | %d = %d", 
-               x, chip8->V[x], chip8->V[y], chip8->V[x] | chip8->V[y]);
-      chip8->V[x] = chip8->V[y] - chip8->V[x];
-      chip8->V[0xF] = chip8->V[x] > chip8->V[y];
+      result = chip8->V[y] - chip8->V[x];
+      asprintf(&log_msg, "V[%d] = %d - %d = %d, ovf = %d", 
+               x, chip8->V[y], chip8->V[x], (uint8)result, result > 255);
+      // The overflow flag for subtraction is actually the opposite of what you expect
+      chip8->V[0xF] = chip8->V[x] <= chip8->V[y];
+      chip8->V[x] = (uint8)result;
       break;
     case ALU_SLL:
       if (chip8->config.legacy_shift) {
         chip8->V[x] = chip8->V[y];
       }
-      asprintf(&log_msg, "V[%d] = %d << 1, ovf = %d", x, chip8->V[x], chip8->V[x] & (uint8)0x8000);
+      asprintf(&log_msg, "V[%d] = %d << 1 = %d, ovf = %d",
+               x, chip8->V[x], (uint8)(chip8->V[x] << 1), (chip8->V[x] & 0x80) != 0);
       // shift VX left by 1, storing the shifted bit into VF
-      chip8->V[0xF] = chip8->V[x] & (uint8)0x8000; // isolate the first bit
+      chip8->V[0xF] = (chip8->V[x] & 0x80) != 0; // isolate the first bit
       chip8->V[x] = chip8->V[x] << 1;
       break;
   }
@@ -174,8 +178,8 @@ void exec_io(struct Chip8 *const chip8, uint8 x, uint8 nn) {
     case IO_CHAR:
       // calculate font location of the specific character X in memory
       asprintf(&log_msg, "Changing index from %d to %d based on font character %x",
-               chip8->I, FONT_START + x * FONT_HEIGHT, x);
-      chip8->I = FONT_START + x * FONT_HEIGHT; 
+               chip8->I, FONT_START + chip8->V[x] * FONT_HEIGHT, chip8->V[x]);
+      chip8->I = FONT_START + chip8->V[x] * FONT_HEIGHT; 
       break;
 
     case IO_BIN_DEC:
