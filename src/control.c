@@ -194,7 +194,6 @@ void exec_io(struct Chip8 *const chip8, uint8 x, uint8 nn) {
       break;
 
     case IO_SMEM:
-      // TODO - make toggle for incrementing I
       // Load all registers up to VX into memory starting at I
       for (int i = 0; i <= x; i++) {
         asprintf(&log_msg, "Filling memory location %d with value V[%d]: %d",
@@ -204,7 +203,15 @@ void exec_io(struct Chip8 *const chip8, uint8 x, uint8 nn) {
 
         chip8->memory[chip8->I + i] = chip8->V[i];
       }
-      log_msg = NULL;
+
+      // On the original CHIP-8 systems, I gets incremented for each value it loads in
+      if (chip8->config.legacy_indexing) {
+        chip8->I += x;
+        asprintf(&log_msg, "legacy indexing flag present, incrementing index by %d (new val = %d)",
+                 x, chip8->I);
+      } else {
+        log_msg = NULL;
+      }
       break;
 
     case IO_LMEM:
@@ -252,8 +259,7 @@ void exec_instruction(Chip8 *const chip8, uint16 instruction) {
       if (instruction == OP_CLR_SCRN) {
         chip8->displaying = 1;
         clear_screen(chip8);
-      }
-      else if (instruction == OP_RET) {
+      } else if (instruction == OP_RET) {
         // NOTE - I don't think it's necessary to overwrite the stack value?
         asprintf(&log_msg, "Return reached, setting pc to %d and decrementing sp to %d",
                  chip8->stack[chip8->sp], chip8->sp - 1);
@@ -339,10 +345,16 @@ void exec_instruction(Chip8 *const chip8, uint16 instruction) {
       break;
 
     case OP_JO:
-      asprintf(&log_msg, "JUMP 0 - setting pc to %d + %d (%d)",
-               nnn, chip8->V[0], nnn + chip8->V[0]);
-      // TODO: make bug configurable for compatability with SUPER-CHIP and CHIP-48 programs
-      chip8->pc = nnn + chip8->V[0];
+      // A side effect introduced in CHIP-48 and SUPER-CHIP systems that was likely a bug
+      if (chip8->config.jump_quirk) {
+        asprintf(&log_msg, "Jump w/ Offset (w/ quirk) - setting pc to %d + V[%d] (%d) = %d",
+                 nnn, x, chip8->V[x], nnn + chip8->V[x]);
+        chip8->pc = nnn + chip8->V[0];
+      } else {
+        asprintf(&log_msg, "Jump w/ Offset - setting pc to %d + %d (%d)",
+                 nnn, chip8->V[0], nnn + chip8->V[0]);
+        chip8->pc = nnn + chip8->V[0];
+      }
       break;
 
     case OP_RAND:
