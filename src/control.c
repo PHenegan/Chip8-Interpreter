@@ -389,11 +389,15 @@ void exec_instruction(Chip8 *const chip8, uint16 instruction) {
 
   if (log_msg != NULL) {
     log_message(log_msg, chip8);
+    free(log_msg);
   }
 }
 
 int exec_cycle(Chip8 *const chip8, struct View *const view) {
   // reset the play_sound flag
+
+  // NOTE - getInput technically doesn't error here, but if a quit signal is pressed
+  // then the program should stop running
   int error = view_getInput(chip8->key, KEY_COUNT);
   if (error) {
     return error;
@@ -452,50 +456,6 @@ Uint32 decrement_timers(Uint32 interval, void *params) {
   return interval;
 }
 
-int exec_debug(Chip8 *const chip8, struct View *const view) {
-  // Timers decrement every second, and the sound timer will update the chip8's
-  // sound flag to indicate when a sound should be played
-  SDL_TimerID timer = SDL_AddTimer(1000, decrement_timers, chip8);
-  int manual = 1;
-  while (chip8->pc < ADDRESS_COUNT) {
-    exec_cycle(chip8, view);
-    // calculate the timing to sleep in nanoseconds and wait that long before running the next instruction
-    
-    // using nanosleep because it can achieve a much better precision than SDL's delay function
-    // (SDL2 has ~10ms precision, while nanosleep has around us precision), needs about ~1.3ms precision
-    struct timespec sleep_val;
-    sleep_val.tv_sec = 0;
-    sleep_val.tv_nsec = (long)(1.0 / INSTRUCTION_FREQUENCY * 1000000000);
-    nanosleep(&sleep_val, &sleep_val);
-
-    int key_count;
-    SDL_PumpEvents();
-    const Uint8* keystate = SDL_GetKeyboardState(&key_count);
-    while (!keystate[SDL_SCANCODE_N]) {
-      SDL_PumpEvents();
-      if (keystate[SDL_SCANCODE_ESCAPE]) {
-        exit(0);
-      }
-      if (keystate[SDL_SCANCODE_RETURN]) {
-        manual = !manual;
-        SDL_Delay(500);
-        break;
-      }
-      if (!manual) {
-        break;
-      }
-    }
-    if (manual) {
-      SDL_Delay(1000);
-    }
-  }
-
-  SDL_RemoveTimer(timer);
-
-  fprintf(stderr, "Error: this program is not complete\n");
-  return -1;
-}
-
 int exec_program(Chip8 *const chip8, struct View *const view) {
   // Timers decrement every second, and the sound timer will update the chip8's
   // sound flag to indicate when a sound should be played
@@ -504,11 +464,16 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
   int manual = 1; // flag for manually stepping through instructions in debug mode
   
   while (chip8->pc < ADDRESS_COUNT) {
-    exec_cycle(chip8, view);
-    // calculate the timing to sleep in nanoseconds and wait that long before running the next instruction
+    int result = exec_cycle(chip8, view);
+    if (result) {
+      return result;
+    }
+    // calculate the timing to sleep in nanoseconds and wait that long
+    // before running the next instruction
     
     // using nanosleep because it can achieve a much better precision than SDL's delay function
-    // (SDL2 has ~10ms precision, while nanosleep has around us precision), needs about ~1.3ms precision
+    // (SDL2 has ~10ms precision, while nanosleep has around us precision),
+    // needs about ~1.3ms precision
     struct timespec sleep_val;
     sleep_val.tv_sec = 0;
     sleep_val.tv_nsec = (long)(1.0 / INSTRUCTION_FREQUENCY * 1000000000);

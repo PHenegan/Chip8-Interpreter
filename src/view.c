@@ -50,16 +50,15 @@ int view_getInput(unsigned char* const keys, const int key_count) {
     keys[i] = keyboard_state[BINDINGS[i]];
   }
 
-  int quit = 1;
+  int quit = QUIT_SIGNAL;
   for (int i = 0; i < EXIT_SIZE; i++) {
-    quit = quit & keyboard_state[EXIT_HOTKEY[i]];
+    quit = quit && keyboard_state[EXIT_HOTKEY[i]];
   }
   if (quit) {
     printf("escape key pressed, exiting...\n");
-    exit(0);
   }
 
-  return 0;
+  return quit;
 }
 
 int view_draw(View *const view, unsigned char *const screen) {
@@ -96,8 +95,8 @@ int view_draw(View *const view, unsigned char *const screen) {
 }
 
 void view_destroy(View *view) {
-  SDL_DestroyWindow(view->window);
   SDL_DestroyRenderer(view->renderer);
+  SDL_DestroyWindow(view->window);
 
   free(view);
 }

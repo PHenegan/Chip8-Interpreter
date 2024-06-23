@@ -1,6 +1,8 @@
 #ifndef VIEW
 #define VIEW
 
+#define QUIT_SIGNAL 200 // the return code I'm using to convey that the user quit the program
+
 typedef struct View View;
 
 // Initialize a View renderer, returning it upon completion.
@@ -26,7 +28,8 @@ int view_playSound();
 // with the states of the keys. The value of each key will be non-zero if the key is being pressed,
 // and 0 if the key is not being pressed.
 //
-// The function will return 0 if it is successful, or 1 otherwise.
+// The function will return 0 if it is successful, and QUIT_SIGNAL if the user enters
+// the key combination for closing the program.
 // 
 // `keys`: an array indicating whether each key is currently being pressed
 // `key_count`: the number of elements in `keys`.

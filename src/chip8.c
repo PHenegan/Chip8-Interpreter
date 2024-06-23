@@ -3,7 +3,8 @@
 #include <unistd.h>
 
 
-void initialize_system(struct Chip8 *chip8) {
+Chip8* chip8_init() {
+  Chip8* chip8 = calloc(1, sizeof(Chip8));
   // Set defaults for config options
   chip8->config.debug = 0;
   chip8->config.jump_quirk = 0;
@@ -43,6 +44,13 @@ void initialize_system(struct Chip8 *chip8) {
   }
 
   load_font(chip8);
+
+  return chip8;
+}
+
+void chip8_destroy(Chip8 *chip8) {
+  SDL_DestroyMutex(chip8->timer_mutex);
+  free(chip8);
 }
 
 int load_program(struct Chip8 *chip8, char *file) {
@@ -109,5 +117,3 @@ unsigned short fetch_instruction(struct Chip8 *const chip8) {
   chip8->pc += 2;
   return result;
 }
-
-

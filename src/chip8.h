@@ -55,8 +55,11 @@ typedef struct Chip8 {
 int load_program(Chip8 *const chip8, char *const file);
 
 // set values in the CHIP-8 system to an initial beginning state
-// `chip8`: the CHIP-8 system to initialize
-void initialize_system(Chip8 *const chip8);
+Chip8* chip8_init();
+
+// free all memory taken up by a CHIP-8 system
+// `chip8`: the CHIP-8 system to free
+void chip8_destroy(Chip8* chip8);
 
 // Load a system font into memory
 // `chip8`: the CHIP-8 system to load the font into

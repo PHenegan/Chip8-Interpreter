@@ -26,19 +26,27 @@ static inline int debug(char* str) {
   return strncmp(str, "--debug", 8) == 0;
 }
 
+void free_memory(Chip8* chip8, int flags) {
+  chip8_destroy(chip8);
+  SDL_QuitSubSystem(SDL_INIT_AUDIO | SDL_INIT_TIMER);
+  SDL_Quit();
+}
+
 int main(int argc, char* argv[]) {
-  SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_TIMER);
+  int sdl_flags = SDL_INIT_AUDIO | SDL_INIT_TIMER;
+  SDL_Init(sdl_flags);
+  
   // using calloc to make sure everything is 0-initialized
-  Chip8 *chip8 = calloc(1, sizeof(Chip8));
+  Chip8 *chip8 = chip8_init();
 
   srand(time(NULL));
   // ensure a file was passed in
   if (argc < 2) {
     fprintf(stderr, "Unable to load program - no file passed in");
+    free_memory(chip8, sdl_flags);
     exit(-1);
   }
 
-  initialize_system(chip8);
   char* filepath = NULL;
   for (int i = 1; i < argc; i++) {
     if (debug(argv[i])) {
@@ -57,14 +65,19 @@ int main(int argc, char* argv[]) {
   // try to load the file in
   if (filepath == NULL || load_program(chip8, filepath) == -1) {
     fprintf(stderr, "Unable to load program - error loading file");
+    free_memory(chip8, sdl_flags);
     exit(-1);
   }
 
   View *view = view_init(DISPLAY_WIDTH, DISPLAY_HEIGHT, 15, "CHIP-8 Interpreter");
   
   int result = exec_program(chip8, view);
+
+  // A quit signal should be a successful result, that just indicates the user
+  // closed the program
+  result = result == QUIT_SIGNAL ? 0 : result;
  
   view_destroy(view);
-  free(chip8);
+  free_memory(chip8, sdl_flags);
   return result;
 }
