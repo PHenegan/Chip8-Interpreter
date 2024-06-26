@@ -40,19 +40,13 @@ typedef struct Chip8 {
   uint16 pc; // program counter (instruction pointer)
   uint16 stack[STACK_SIZE];
   uint16 sp; // stack pointer
-  SDL_mutex* timer_mutex;
   uint8 delay_timer;
   uint8 sound_timer;
   char sound_flag;
   uint8 opcode;
   uint8 key[KEY_COUNT];
-  char displaying;
+  char display_flag;
 } Chip8;
-
-// Load the a program into memory from the given file, returning 0 if successful
-// `chip8`: the CHIP-8 system to load the program into
-// `file`: the file path of the binary program to load
-int load_program(Chip8 *const chip8, char *const file);
 
 // set values in the CHIP-8 system to an initial beginning state
 Chip8* chip8_init();
@@ -64,6 +58,15 @@ void chip8_destroy(Chip8* chip8);
 // Load a system font into memory
 // `chip8`: the CHIP-8 system to load the font into
 void load_font(Chip8 *const chip8);
+
+// Load the a program into memory from the given file, returning 0 if successful
+// `chip8`: the CHIP-8 system to load the program into
+// `file`: the file path of the binary program to load
+int load_program(Chip8 *const chip8, char *const file);
+
+// Decrement the two timers present on CHIP-8 systems
+// `chip8`: the CHIP-8 system whose timers should be decremented
+void chip8_decrement_timers(Chip8 *const chip8);
 
 // Get the next instruction and increment the program_counter by two.
 // Returns the next instruction.

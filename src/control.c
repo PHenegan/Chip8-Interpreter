@@ -1,9 +1,11 @@
 #include "control.h"
+#include "chip8-timer.h"
 #include "chip8.h"
 #include "stdio.h"
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_timer.h>
+#include <stdint.h>
 #include <time.h>
 
 void log_message(char* message, const Chip8 *const chip8) {
@@ -142,28 +144,18 @@ void exec_io(struct Chip8 *const chip8, uint8 x, uint8 nn) {
   char* log_msg = NULL;
   switch (nn) {
     case IO_LDTIME:
-      SDL_LockMutex(chip8->timer_mutex);
-      
       asprintf(&log_msg, "set register %d to timer value %d", x, chip8->delay_timer);
       chip8->V[x] = chip8->delay_timer;
-      
-      SDL_UnlockMutex(chip8->timer_mutex);
       break;
 
     case IO_SDTIME:
       asprintf(&log_msg, "set delay timer to value V[%d]: %d", x, chip8->V[x]);
-      
-      SDL_LockMutex(chip8->timer_mutex);
       chip8->delay_timer = chip8->V[x];
-      SDL_UnlockMutex(chip8->timer_mutex);
       break;
     
     case IO_SSTIME:
       asprintf(&log_msg, "set sound timer to value V[%d]: %d", x, chip8->V[x]);
-      
-      SDL_LockMutex(chip8->timer_mutex);
       chip8->sound_timer = chip8->V[x];
-      SDL_UnlockMutex(chip8->timer_mutex);
       break;
     
     case IO_ADD_IDX:
@@ -262,14 +254,14 @@ void exec_instruction(Chip8 *const chip8, uint16 instruction) {
   uint8 n = instruction & OP_N;
   uint8 x = (instruction & OP_X) >> 8;
   uint8 y = (instruction & OP_Y) >> 4;
-  chip8->displaying = 0;
+  chip8->display_flag = 0;
   char* log_msg = NULL;
   char* branch_msg;
 
   switch (chip8->opcode) {
     case OP_SYS:
       if (instruction == OP_CLR_SCRN) {
-        chip8->displaying = 1;
+        chip8->display_flag = 1;
         clear_screen(chip8);
       } else if (instruction == OP_RET) {
         // NOTE - I don't think it's necessary to overwrite the stack value?
@@ -379,7 +371,7 @@ void exec_instruction(Chip8 *const chip8, uint16 instruction) {
       break;
     
     case OP_DISPLAY:
-      chip8->displaying = 1;
+      chip8->display_flag = 1;
       exec_display(chip8, x, y, n);
       break;
     
@@ -424,72 +416,38 @@ int exec_cycle(Chip8 *const chip8, struct View *const view) {
 
   exec_instruction(chip8, instruction);
   
-  if (chip8->displaying) {
+  if (chip8->display_flag) {
     view_draw(view, chip8->screen);
   }
 
-  // Copy the flag to avoid doing anything which takes time while
-  // the mutex lock is acquired.
-  uint8 play_sound;
-  error = SDL_LockMutex(chip8->timer_mutex);
-  if (error) {
-    fprintf(stderr, "error: Could not acquire timer mutex\n");
-    return error;
-  }
-  play_sound = chip8->sound_flag;
-  SDL_UnlockMutex(chip8->timer_mutex);
-  
-  if (play_sound) {
-    // TODO - this doesn't work
+  if (chip8->sound_flag) {
+    // TODO - this isn't implemented
     view_playSound();
     chip8->sound_flag = 0;
   }
   return 0;
 }
 
-Uint32 decrement_timers(Uint32 interval, void *params) {
-  struct Chip8* chip8 = (struct Chip8*)params;
-  int result = SDL_LockMutex(chip8->timer_mutex);
-  
-  // if there is an error, ignore timers and print an error message in the console
-  if (result) {
-    fprintf(stderr, "Error: unable to decrement timer\n");
-    return interval;
-  }
-  if (chip8->sound_timer > 0) {
-    chip8->sound_timer--;
-    chip8->sound_flag = 1;
-  }
-  if (chip8->delay_timer > 0) {
-    chip8->delay_timer--;
-  }
-  SDL_UnlockMutex(chip8->timer_mutex);
-
-  return interval;
-}
-
 int exec_program(Chip8 *const chip8, struct View *const view) {
   // Timers decrement every second, and the sound timer will update the chip8's
   // sound flag to indicate when a sound should be played
-  SDL_TimerID timer = SDL_AddTimer(1000, decrement_timers, chip8);
-
+  uint64_t last_time = SDL_GetTicks64();
   int manual = 1; // flag for manually stepping through instructions in debug mode
   
   while (chip8->pc < ADDRESS_COUNT) {
+    uint64_t current_time = SDL_GetTicks64();
+    if (current_time > last_time + (int)(1.0 / TIMER_FREQUENCY * 1000)) {
+      chip8_decrement_timers(chip8);
+      last_time = current_time;
+    }
+
     int result = exec_cycle(chip8, view);
     if (result) {
       return result;
     }
     // calculate the timing to sleep in nanoseconds and wait that long
     // before running the next instruction
-    
-    // using nanosleep because it can achieve a much better precision than SDL's delay function
-    // (SDL2 has ~10ms precision, while nanosleep has around us precision),
-    // needs about ~1.3ms precision
-    struct timespec sleep_val;
-    sleep_val.tv_sec = 0;
-    sleep_val.tv_nsec = (long)(1.0 / INSTRUCTION_FREQUENCY * 1000000000);
-    nanosleep(&sleep_val, &sleep_val); 
+    precise_sleep((long)(1.0 / INSTRUCTION_FREQUENCY * 1000000000));
 
     // additional debug step for manually stepping through instructions
     if (chip8->config.debug) {
@@ -500,7 +458,7 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
         SDL_PumpEvents();
         if (keystate[SDL_SCANCODE_RETURN]) {
           manual = !manual;
-          SDL_Delay(100);
+          SDL_Delay(200);
           break;
         }
         if (!manual) {
@@ -512,8 +470,6 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
       }
     }
   }
-
-  SDL_RemoveTimer(timer);
 
   fprintf(stderr, "Error: this program is not complete\n");
   return -1;

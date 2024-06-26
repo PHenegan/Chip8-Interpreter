@@ -15,9 +15,8 @@ Chip8* chip8_init() {
   chip8->I = 0;
   chip8->sp = 0;
   chip8->opcode = 0;
-  chip8->displaying = 0;
+  chip8->display_flag = 0;
   chip8->sound_flag = 0;
-  chip8->timer_mutex = SDL_CreateMutex();
 
   // Initialize all addresses in memory to 0
   for (int addr = 0; addr < ADDRESS_COUNT; addr++) {
@@ -49,7 +48,6 @@ Chip8* chip8_init() {
 }
 
 void chip8_destroy(Chip8 *chip8) {
-  SDL_DestroyMutex(chip8->timer_mutex);
   free(chip8);
 }
 
@@ -101,6 +99,16 @@ void load_font(struct Chip8 *chip8) {
   // load the font into memory
   for (int i = 0; i < total_size; ++i) {
     chip8->memory[FONT_START + i] = font[i];
+  }
+}
+
+void chip8_decrement_timers(Chip8 *const chip8) {
+  if (chip8->delay_timer > 0) {
+    chip8->delay_timer--;
+  }
+  if (chip8->sound_timer > 0) {
+    chip8->sound_flag = 1;
+    chip8->sound_timer--;
   }
 }
 

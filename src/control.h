@@ -5,6 +5,7 @@
 #include "view.h"
 
 #define INSTRUCTION_FREQUENCY 700
+#define TIMER_FREQUENCY 60
 
 // Instruction decoding bitmasks
 #define OP_MASK 0xF000
