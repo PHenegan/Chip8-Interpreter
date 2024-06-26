@@ -33,11 +33,13 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
                x, chip8->V[x], chip8->V[y], chip8->V[x] & chip8->V[y]);
       chip8->V[x] = chip8->V[x] & chip8->V[y];
       break;
+
     case ALU_XOR:
       asprintf(&log_msg, "V[%d] = %d ^ %d = %d", 
                x, chip8->V[x], chip8->V[y], chip8->V[x] ^ chip8->V[y]);
       chip8->V[x] = chip8->V[x] ^ chip8->V[y];
       break;
+
     case ALU_ADD:
       result = chip8->V[x] + chip8->V[y];
       asprintf(&log_msg, "V[%d] = %d + %d = %d, ovf = %d", 
@@ -45,6 +47,7 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
       chip8->V[x] = (uint8)result;
       chip8->V[0xF] = result > 255;
       break;
+
     // SUB (VX - VY)
     case ALU_SUBY:
       result = chip8->V[x] - chip8->V[y];
@@ -54,6 +57,7 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
       chip8->V[0xF] = chip8->V[y] <= chip8->V[x];
       chip8->V[x] = (uint8)result;
       break;
+
     case ALU_SRL:
       if (chip8->config.legacy_shift) {
         chip8->V[x] = chip8->V[y];
@@ -63,6 +67,7 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
       chip8->V[0xF] = chip8->V[x] & 1; // isolate the last bit
       chip8->V[x] = chip8->V[x] >> 1;
       break;
+
     // SUB (VY - VX)
     case ALU_SUBX:
       result = chip8->V[y] - chip8->V[x];
@@ -72,6 +77,7 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
       chip8->V[0xF] = chip8->V[x] <= chip8->V[y];
       chip8->V[x] = (uint8)result;
       break;
+
     case ALU_SLL:
       if (chip8->config.legacy_shift) {
         chip8->V[x] = chip8->V[y];
@@ -102,13 +108,22 @@ void exec_display(struct Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
     for (int col = 0; col < 8 && x_pos + col < DISPLAY_WIDTH; col++) {
       uint8* pixel = &chip8->screen[(y_pos + row) * DISPLAY_WIDTH + x_pos + col];
       uint8 new_value = draw_byte & target_bit;
-      if (*pixel && !new_value) {
+      // If both the draw bit and the current pixel are 1,
+      // turn the pixel off and set the flag register to 1
+      if (*pixel && new_value) {
+        new_value = 0; 
         chip8->V[0xF] = 1;
       }
       *pixel = new_value;
       target_bit = target_bit >> 1;
     }
   }
+
+  char* msg;
+  asprintf(&msg, "Display called: V[%d] = %d, V[%d] = %d, n = %d, V[0xF] = %d after instruction",
+           x, chip8->V[x], y, chip8->V[y], n, chip8->V[0xF]);
+  log_message(msg, chip8);
+  free(msg);
 }
 
 // Gets the first currently pressed key it can find, setting the out parameter
