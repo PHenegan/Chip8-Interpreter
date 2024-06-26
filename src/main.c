@@ -32,6 +32,15 @@ void free_memory(Chip8* chip8, int flags) {
   SDL_Quit();
 }
 
+void help_menu() {
+  printf("Usage: chip8 [...options] [rom-filepath]\n");
+  printf("Options:\t\tDescription\n");
+  printf("--debug\t\tRun the program in debug mode, stepping through instructions 1-by-1\n");
+  printf("--old-shift\tIf enabled, copy VY into VX before doing bit shifts\n");
+  printf("--jump-quirk\tIf enabled, use VX instead of V0 in 0xBNNN instruction\n");
+  printf("--old-index\tIf enabled, increment index register when loading/storing memory\n");
+}
+
 int main(int argc, char* argv[]) {
   int sdl_flags = SDL_INIT_AUDIO | SDL_INIT_TIMER;
   SDL_Init(sdl_flags);
@@ -40,12 +49,6 @@ int main(int argc, char* argv[]) {
   Chip8 *chip8 = chip8_init();
 
   srand(time(NULL));
-  // ensure a file was passed in
-  if (argc < 2) {
-    fprintf(stderr, "Unable to load program - no file passed in");
-    free_memory(chip8, sdl_flags);
-    exit(-1);
-  }
 
   char* filepath = NULL;
   for (int i = 1; i < argc; i++) {
@@ -65,6 +68,7 @@ int main(int argc, char* argv[]) {
   // try to load the file in
   if (filepath == NULL || load_program(chip8, filepath) == -1) {
     fprintf(stderr, "Unable to load program - error loading file");
+    help_menu();
     free_memory(chip8, sdl_flags);
     exit(-1);
   }
