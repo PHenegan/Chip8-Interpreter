@@ -349,7 +349,7 @@ void exec_instruction(Chip8 *const chip8, uint16 instruction) {
       if (chip8->config.jump_quirk) {
         asprintf(&log_msg, "Jump w/ Offset (w/ quirk) - setting pc to %d + V[%d] (%d) = %d",
                  nnn, x, chip8->V[x], nnn + chip8->V[x]);
-        chip8->pc = nnn + chip8->V[0];
+        chip8->pc = nnn + chip8->V[x];
       } else {
         asprintf(&log_msg, "Jump w/ Offset - setting pc to %d + %d (%d)",
                  nnn, chip8->V[0], nnn + chip8->V[0]);
