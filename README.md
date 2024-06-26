@@ -5,7 +5,7 @@ Developed by Patrick Henegan
 ## What's a CHIP-8?
 
 This project is an interpreter which executes instructions for the CHIP-8 microprocessor.
-For those unaware, the CHIP-8 microprocessor was a platform on computers from the 1970's and
+The CHIP-8 was a virtual platform on computers from the 1970's and
 1980's, which was intended to be a standard instruction set to develop games for.
 
 ## Motivation
@@ -32,7 +32,7 @@ and seemed interesting to learn about.
 
 ## Setup
 
-This interpreter is written in C using GCC. The only requirements for the emulator are a
+This interpreter is written in C using GCC. The only requirements are a
 glibc implementation and (once I get graphics working) SDL2.
 
 This project was developed and tested on linux_x86, and depends on  `time.h`, `fcntl.h`,
@@ -42,8 +42,11 @@ in Windows either, though it would probably work with something like WSL 2 if yo
 
 ### Dependencies
 
-This project depends on SDL2, SDL2_image, and SDL2_sound. These can be installed with a package manager,
-or using the included shell.nix setup for systems using the nix package manager.
+This project depends on SDL2, SDL2_image, and SDL2_sound. These can be installed with 
+a package manager or by using the included shell.nix setup (if you have nix-shell).
+
+As mentioned above, this project depends on some POSIX libraries. In addition to those, I use 
+the C standard library throughout the codebase.
 
 ### Building
 
