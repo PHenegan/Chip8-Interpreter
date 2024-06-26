@@ -107,14 +107,11 @@ void exec_display(struct Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
     uint8 target_bit =  0x80;
     for (int col = 0; col < 8 && x_pos + col < DISPLAY_WIDTH; col++) {
       uint8* pixel = &chip8->screen[(y_pos + row) * DISPLAY_WIDTH + x_pos + col];
-      uint8 new_value = draw_byte & target_bit;
-      // If both the draw bit and the current pixel are 1,
-      // turn the pixel off and set the flag register to 1
-      if (*pixel && new_value) {
-        new_value = 0; 
-        chip8->V[0xF] = 1;
-      }
-      *pixel = new_value;
+      uint8 flip_bit = (draw_byte & target_bit);
+
+      // If a bit gets turned off by the draw byte, the flag register gets set to 1
+      chip8->V[0xF] = chip8->V[0xF] || (flip_bit) && *pixel;
+      *pixel = flip_bit ? !*pixel : *pixel; 
       target_bit = target_bit >> 1;
     }
   }
