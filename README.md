@@ -18,7 +18,7 @@ of a RISC-V CPU).
 This is also a good starting point before moving on to other retro interpreters/emulators,
 and seemed interesting to learn about.
 
-## what works? what's left?
+## What works? What's left?
 - The IBM logo test program, along with BC_test and another test program both function.
   Tetris seems to work, though I think my input mapping is not being done correctly because
   the controls don't appear to match with other emulators I was testing against. 
