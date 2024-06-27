@@ -3,6 +3,7 @@
 
 #include "chip8.h"
 #include "view.h"
+#include <stdint.h>
 
 #define INSTRUCTION_FREQUENCY 700
 #define TIMER_FREQUENCY 60
@@ -70,7 +71,7 @@
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `y`: the 4-bit number taken from the 3rd hex digit of the instruction
 // `n`: the 4-bit number taken from the 4th (last) hex digit of the instruction
-void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n);
+void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n);
 
 // Execute the display instruction for the CHIP-8.
 // NOTE: This does not actually draw and pixels through SDL. It will update the
@@ -80,12 +81,12 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n);
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `y`: the 4-bit number taken from the 3rd hex digit of the instruction
 // `n`: the 4-bit number taken from the 4th (last) hex digit of the instruction
-void exec_display(Chip8 *const chip8, uint8 x, uint8 y, uint8 n);
+void exec_display(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n);
 
 // Execute an IO instruction for the CHIP-8.
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `nn`: the 8-bit number taken from the 3rd and 4th (last 2) hex digits of the instruction
-void exec_io(Chip8 *const chip8, uint8 x, uint8 nn);
+void exec_io(Chip8 *const chip8, uint8_t x, uint8_t nn);
 
 // Execute a single fetch-decode-execute cycle for an instruction on the CHIP-8 system
 // `chip8`: the chip8 processor on which a cycle will be executed 

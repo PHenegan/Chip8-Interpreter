@@ -5,7 +5,6 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_timer.h>
-#include <stdint.h>
 #include <time.h>
 
 void log_message(char* message, const Chip8 *const chip8) {
@@ -14,7 +13,7 @@ void log_message(char* message, const Chip8 *const chip8) {
   }
 }
 
-void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
+void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n) {
   short result;
   char* log_msg = NULL;
   switch (n) {
@@ -45,8 +44,8 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
     case ALU_ADD:
       result = chip8->V[x] + chip8->V[y];
       asprintf(&log_msg, "V[%d] = %d + %d = %d, ovf = %d", 
-               x, chip8->V[x], chip8->V[y], (uint8)result, result > 255);
-      chip8->V[x] = (uint8)result;
+               x, chip8->V[x], chip8->V[y], (uint8_t)result, result > 255);
+      chip8->V[x] = (uint8_t)result;
       chip8->V[0xF] = result > 255;
       break;
 
@@ -54,10 +53,10 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
     case ALU_SUBY:
       result = chip8->V[x] - chip8->V[y];
       asprintf(&log_msg, "V[%d] = %d - %d = %d, ovf = %d", 
-               x, chip8->V[x], chip8->V[y], (uint8)result, (uint8)result > chip8->V[x]); 
+               x, chip8->V[x], chip8->V[y], (uint8_t)result, (uint8_t)result > chip8->V[x]); 
       // The overflow flag for subtraction is actually the opposite of what you expect
       chip8->V[0xF] = chip8->V[y] <= chip8->V[x];
-      chip8->V[x] = (uint8)result;
+      chip8->V[x] = (uint8_t)result;
       break;
 
     case ALU_SRL:
@@ -74,10 +73,10 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
     case ALU_SUBX:
       result = chip8->V[y] - chip8->V[x];
       asprintf(&log_msg, "V[%d] = %d - %d = %d, ovf = %d", 
-               x, chip8->V[y], chip8->V[x], (uint8)result, result > 255);
+               x, chip8->V[y], chip8->V[x], (uint8_t)result, result > 255);
       // The overflow flag for subtraction is actually the opposite of what you expect
       chip8->V[0xF] = chip8->V[x] <= chip8->V[y];
-      chip8->V[x] = (uint8)result;
+      chip8->V[x] = (uint8_t)result;
       break;
 
     case ALU_SLL:
@@ -85,7 +84,7 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
         chip8->V[x] = chip8->V[y];
       }
       asprintf(&log_msg, "V[%d] = %d << 1 = %d, ovf = %d",
-               x, chip8->V[x], (uint8)(chip8->V[x] << 1), (chip8->V[x] & 0x80) != 0);
+               x, chip8->V[x], (uint8_t)(chip8->V[x] << 1), (chip8->V[x] & 0x80) != 0);
       // shift VX left by 1, storing the shifted bit into VF
       chip8->V[0xF] = (chip8->V[x] & 0x80) != 0; // isolate the first bit
       chip8->V[x] = chip8->V[x] << 1;
@@ -97,19 +96,19 @@ void exec_alu(Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
   }
 }
 
-void exec_display(struct Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
-  uint8 x_pos = chip8->V[x] % DISPLAY_WIDTH;
-  uint8 y_pos = chip8->V[y] % DISPLAY_HEIGHT;
+void exec_display(struct Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n) {
+  uint8_t x_pos = chip8->V[x] % DISPLAY_WIDTH;
+  uint8_t y_pos = chip8->V[y] % DISPLAY_HEIGHT;
 
   chip8->V[0xF] = 0; // reset flag register
 
   for (int row = 0; row < n && y_pos + row < DISPLAY_HEIGHT; row++) {
-    uint8 draw_byte = chip8->memory[chip8->I + row];
+    uint8_t draw_byte = chip8->memory[chip8->I + row];
     // 8 is hardcoded because bytes are used, so at most 8 pixels can be set.
-    uint8 target_bit =  0x80;
+    uint8_t target_bit =  0x80;
     for (int col = 0; col < 8 && x_pos + col < DISPLAY_WIDTH; col++) {
-      uint8* pixel = &chip8->screen[(y_pos + row) * DISPLAY_WIDTH + x_pos + col];
-      uint8 flip_bit = (draw_byte & target_bit);
+      uint8_t* pixel = &chip8->screen[(y_pos + row) * DISPLAY_WIDTH + x_pos + col];
+      uint8_t flip_bit = (draw_byte & target_bit);
 
       // If a bit gets turned off by the draw byte, the flag register gets set to 1
       chip8->V[0xF] = chip8->V[0xF] || (flip_bit) && *pixel;
@@ -129,7 +128,7 @@ void exec_display(struct Chip8 *const chip8, uint8 x, uint8 y, uint8 n) {
 // to the first pressed key. NOTE - idk if this is a correct implementation?
 char get_pressed_key(struct Chip8 *const chip8, char* key) {
   char found = 0;
-  for (uint8 curr_key = 0; curr_key < KEY_COUNT; curr_key++) {
+  for (uint8_t curr_key = 0; curr_key < KEY_COUNT; curr_key++) {
     if (chip8->key[curr_key]) {
       found = 1;
       *key = curr_key;
@@ -139,7 +138,7 @@ char get_pressed_key(struct Chip8 *const chip8, char* key) {
   return found;
 }
 
-void exec_io(struct Chip8 *const chip8, uint8 x, uint8 nn) {
+void exec_io(struct Chip8 *const chip8, uint8_t x, uint8_t nn) {
   char result;
   char* log_msg = NULL;
   switch (nn) {
@@ -247,13 +246,13 @@ void clear_screen(struct Chip8 *const chip8) {
   }
 }
 
-void exec_instruction(Chip8 *const chip8, uint16 instruction) {
+void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
   // OP (4 bits), x (4 bits), y (4 bits), n (4 bits)
-  uint16 nnn = instruction & OP_NNN;
-  uint8 nn = instruction & OP_NN;
-  uint8 n = instruction & OP_N;
-  uint8 x = (instruction & OP_X) >> 8;
-  uint8 y = (instruction & OP_Y) >> 4;
+  uint16_t nnn = instruction & OP_NNN;
+  uint8_t nn = instruction & OP_NN;
+  uint8_t n = instruction & OP_N;
+  uint8_t x = (instruction & OP_X) >> 8;
+  uint8_t y = (instruction & OP_Y) >> 4;
   chip8->display_flag = 0;
   char* log_msg = NULL;
   char* branch_msg;
@@ -407,7 +406,7 @@ int exec_cycle(Chip8 *const chip8, struct View *const view) {
     return error;
   }
 
-  uint16 instruction = fetch_instruction(chip8);
+  uint16_t instruction = fetch_instruction(chip8);
   
   char* log_msg;
   asprintf(&log_msg, "fetched instruction %04x at address %d", instruction, chip8->pc - 2);
@@ -453,7 +452,7 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
     if (chip8->config.debug) {
       int key_count;
       SDL_PumpEvents();
-      const Uint8* keystate = SDL_GetKeyboardState(&key_count);
+      const uint8_t* keystate = SDL_GetKeyboardState(&key_count);
       while (!keystate[SDL_SCANCODE_N]) {
         SDL_PumpEvents();
         if (keystate[SDL_SCANCODE_RETURN]) {

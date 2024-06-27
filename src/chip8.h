@@ -2,6 +2,8 @@
 #define CHIP8
 
 #include <SDL2/SDL_mutex.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 // number of bytes of memory
 #define ADDRESS_COUNT 4096
@@ -27,25 +29,22 @@ typedef struct ConfigFlags {
   int legacy_indexing;
 } ConfigFlags;
 
-typedef unsigned char uint8;
-typedef unsigned short uint16;
-
 // Represents the state of a CHIP-8 process (Virtual CPU?) at any given point in time
 typedef struct Chip8 {
   ConfigFlags config;
-  uint8 memory[ADDRESS_COUNT];
-  uint8 screen[DISPLAY_HEIGHT * DISPLAY_WIDTH];
-  uint8 V[REGISTER_COUNT]; // registers
-  uint16 I; // index register
-  uint16 pc; // program counter (instruction pointer)
-  uint16 stack[STACK_SIZE];
-  uint16 sp; // stack pointer
-  uint8 delay_timer;
-  uint8 sound_timer;
-  char sound_flag;
-  uint8 opcode;
-  uint8 key[KEY_COUNT];
-  char display_flag;
+  uint8_t memory[ADDRESS_COUNT];
+  uint8_t screen[DISPLAY_HEIGHT * DISPLAY_WIDTH];
+  uint8_t V[REGISTER_COUNT]; // registers
+  uint16_t I; // index register
+  uint16_t pc; // program counter (instruction pointer)
+  uint16_t stack[STACK_SIZE];
+  uint16_t sp; // stack pointer
+  uint8_t delay_timer;
+  uint8_t sound_timer;
+  bool sound_flag;
+  uint8_t opcode;
+  uint8_t key[KEY_COUNT];
+  bool display_flag;
 } Chip8;
 
 // set values in the CHIP-8 system to an initial beginning state
@@ -71,6 +70,6 @@ void chip8_decrement_timers(Chip8 *const chip8);
 // Get the next instruction and increment the program_counter by two.
 // Returns the next instruction.
 // `chip8`: the CHIP-8 system to fetch an instruction for
-uint16 fetch_instruction(Chip8 *const chip8);
+uint16_t fetch_instruction(Chip8 *const chip8);
 
 #endif

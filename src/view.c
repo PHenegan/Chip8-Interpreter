@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_video.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include "view.h"
 #include "key-bindings.h"
@@ -50,7 +51,7 @@ int view_getInput(unsigned char* const keys, const int key_count) {
     keys[i] = keyboard_state[BINDINGS[i]];
   }
 
-  int quit = QUIT_SIGNAL;
+  bool quit = QUIT_SIGNAL;
   for (int i = 0; i < EXIT_SIZE; i++) {
     quit = quit && keyboard_state[EXIT_HOTKEY[i]];
   }
