@@ -256,6 +256,7 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
   chip8->display_flag = 0;
   char* log_msg = NULL;
   char* branch_msg;
+  char* ext_msg;
 
   switch (chip8->opcode) {
     case OP_SYS:
@@ -375,14 +376,21 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
       break;
     
     case OP_BKEY:
-      branch_msg = "key not pressed, did not branch";
+      branch_msg = "condition not met, not branching";
       // Skip 1 instruction if either "skip if pressed" or "skip if not pressed" are being used
-      if ((nn == 0x9E && chip8->key[x]) || (nn == 0xA1 && !chip8->key[x])) {
-        branch_msg = "key pressed, branching";
+      if ((nn == BK_P && chip8->key[chip8->V[x]]) || (nn == BK_NP && !chip8->key[chip8->V[x]])) {
+        branch_msg = "condition met, branching";
         chip8->pc += 2;
       }
-      asprintf(&log_msg, "BKEY - Checking if key %x is pressed: %s, pc: %d",
-               x, branch_msg, chip8->pc);
+      if (nn == BK_P) {
+        ext_msg = "BKEY";
+      } else if (nn == BK_NP) {
+        ext_msg = "BNKEY";
+      } else {
+        ext_msg = "Bad instruction";
+      }
+      asprintf(&log_msg, "%s - Checking if key %x is pressed: %s, pc: %d",
+               ext_msg, chip8->V[x], branch_msg, chip8->pc);
       break;
     
     case OP_IO:
@@ -399,9 +407,9 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
 int exec_cycle(Chip8 *const chip8, struct View *const view) {
   // reset the play_sound flag
 
-  // NOTE - getInput technically doesn't error here, but if a quit signal is pressed
+  // NOTE - get_input technically doesn't error here, but if a quit signal is pressed
   // then the program should stop running
-  int error = view_getInput(chip8->key, KEY_COUNT);
+  int error = view_get_input(chip8->key, KEY_COUNT);
   if (error) {
     return error;
   }
@@ -421,7 +429,7 @@ int exec_cycle(Chip8 *const chip8, struct View *const view) {
 
   if (chip8->sound_flag) {
     // TODO - this isn't implemented
-    view_playSound();
+    view_play_sound();
     chip8->sound_flag = 0;
   }
   return 0;

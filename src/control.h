@@ -36,10 +36,6 @@
 #define OP_BKEY 0xE
 #define OP_IO 0xF
 
-// Possible suffixes for the BKEY opcode
-#define NN_BKEY 0x9E
-#define NN_BNKEY 0xA1
-
 // ALU instructions
 #define ALU_SET 0x0
 #define ALU_OR 0x1
