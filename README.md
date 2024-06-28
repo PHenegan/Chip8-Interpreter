@@ -38,7 +38,8 @@ glibc implementation and (once I get graphics working) SDL2.
 This project was developed and tested on linux_x86, and depends on  `time.h`, `fcntl.h`,
 and `unistd.h`. In theory, this code should work on any POSIX-compliant system, but I don't
 have access to a MacOS system. From what I can tell, none of the above libraries work
-in Windows either, though it would probably work with something like WSL 2 if you're dedicated enough.
+in Windows either, though it would probably work with something like WSL 2
+if you're dedicated enough.
 
 ### Dependencies
 
@@ -79,7 +80,8 @@ which is useful because many programs end by infinitely looping in a finished st
 ## Credit
 
 [This guide](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/)
-was a great resource in describing the specifications of the CHIP-8 instructions and expected behaviors.
+was a great resource in describing the specifications of the CHIP-8 instructions and expected
+behaviors.
 
 [SDL2](https://wiki.libsdl.org/SDL2/FrontPage) Is the library I used for displaying graphics 
 and getting user inputs.

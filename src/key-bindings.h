@@ -6,10 +6,10 @@
 // This layout mimics the layout of the numpad present on the COSMIAC VIP
 // on a 60%+ QWERTY keyboard. The original numpad looks like this:
 //
-// 1 2 3 C
-// 4 5 6 D
-// 7 8 9 E
-// A 0 B F
+// 1 2 3 C |    | 1 2 3 4
+// 4 5 6 D | -> | Q W E R
+// 7 8 9 E |    | A S D F
+// A 0 B F |    | Z X C V
 //
 // The 16 elements in this array represent the physical keybinding for the numbers
 // 0-15 (0x0-0xF) on a CHIP-8 system

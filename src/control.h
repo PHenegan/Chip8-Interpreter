@@ -29,12 +29,16 @@
 #define OP_LI 0x6
 #define OP_ADDI 0x7
 #define OP_ALU 0x8
-#define OP_SET_IDX 0xA // NOTE - I don't know what I (index) is used for
+#define OP_SET_IDX 0xA
 #define OP_JO 0xB // Jump w/ OFFSET
 #define OP_RAND 0xC
 #define OP_DISPLAY 0xD
 #define OP_BKEY 0xE
 #define OP_IO 0xF
+
+// Possible suffixes for the BKEY opcode
+#define NN_BKEY 0x9E
+#define NN_BNKEY 0xA1
 
 // ALU instructions
 #define ALU_SET 0x0
@@ -67,6 +71,7 @@
 // TODO - this can be generalized more - all of the instructions
 // store results in VX, maybe this can be changed into a function that just takes in the ALU op
 // and params, and outputs the result (maybe also take in an `ovf` pointer)
+//
 // `chip8`: the chip8 processor on which the ALU operation will be executed
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `y`: the 4-bit number taken from the 3rd hex digit of the instruction
@@ -77,6 +82,7 @@ void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n);
 // NOTE: This does not actually draw and pixels through SDL. It will update the
 // draw frame (buffer?) and the draw flag of the CHIP-8. This allows more flexibility
 // and separation between control logic and view logic.
+//
 // `chip8`: the chip8 processor on which the display instruction will be executed
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `y`: the 4-bit number taken from the 3rd hex digit of the instruction
@@ -84,11 +90,20 @@ void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n);
 void exec_display(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n);
 
 // Execute an IO instruction for the CHIP-8.
+//
+// `chip8`: the CHIP-8 processor to run the IO instruction on
 // `x`: the 4-bit number taken from the 2nd hex digit of the instruction
 // `nn`: the 8-bit number taken from the 3rd and 4th (last 2) hex digits of the instruction
 void exec_io(Chip8 *const chip8, uint8_t x, uint8_t nn);
 
+// Execute a single opcode instruction for the CHIP-8
+//
+// `chip8`: the CHIP-8 processor to run the instruction on
+// `instruction`: the 16-bit instruction to run
+void exec_instruction(Chip8 *const chip8, uint16_t instruction);
+
 // Execute a single fetch-decode-execute cycle for an instruction on the CHIP-8 system
+//
 // `chip8`: the chip8 processor on which a cycle will be executed 
 // `view`: the object used to display the state of the CHIP-8 to the user
 int exec_cycle(Chip8 *const chip8, struct View *const view);

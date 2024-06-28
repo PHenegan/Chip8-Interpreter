@@ -35,12 +35,12 @@ View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const char *titl
   return view;
 }
 
-int view_playSound() {
+int view_play_sound() {
   // TODO - implement
   return -1;
 }
 
-int view_getInput(unsigned char* const keys, const int key_count) {
+int view_get_input(unsigned char* const keys, const int key_count) {
   SDL_PumpEvents();
   const Uint8* keyboard_state = SDL_GetKeyboardState(NULL);
   

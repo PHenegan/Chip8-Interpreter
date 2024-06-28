@@ -22,7 +22,7 @@ struct View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const cha
 int view_draw(struct View *const view, unsigned char *const screen);
 
 // TODO - implement and fix parameters
-int view_playSound();
+int view_play_sound();
 
 // Get input from the user, populating the provided character array
 // with the states of the keys. The value of each key will be non-zero if the key is being pressed,
@@ -33,7 +33,7 @@ int view_playSound();
 // 
 // `keys`: an array indicating whether each key is currently being pressed
 // `key_count`: the number of elements in `keys`.
-int view_getInput(unsigned char* const keys, const int key_count);
+int view_get_input(unsigned char* const keys, const int key_count);
 
 // Deconstruct the view struct, freeing the resources used by the view and cleaning up
 // and GUI library resources.
