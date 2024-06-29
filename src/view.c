@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_video.h>
 #include <stdbool.h>
@@ -44,6 +45,12 @@ int view_get_input(unsigned char* const keys, const int key_count) {
   SDL_PumpEvents();
   const Uint8* keyboard_state = SDL_GetKeyboardState(NULL);
   
+  SDL_Event event;
+  SDL_PollEvent(&event);
+  if (event.type == SDL_QUIT) {
+    return 1; 
+  }
+
   // Loop through keys and update them based on the state of
   // the keys on the keyboard
   // see key-bindings.h for CHIP-8 keybindings
