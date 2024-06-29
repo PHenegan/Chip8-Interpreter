@@ -3,48 +3,44 @@
 #include "chip8.h"
 #include "stdio.h"
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_log.h>
 #include <SDL2/SDL_scancode.h>
 #include <SDL2/SDL_timer.h>
 #include <time.h>
 
-void log_message(char* message, const Chip8 *const chip8) {
-  if (chip8->config.debug) {
-    printf("%s\n", message);
-  }
-}
+const int CATEGORY = SDL_LOG_CATEGORY_APPLICATION;
 
 void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n) {
   short result;
   char* log_msg = NULL;
   switch (n) {
     case ALU_SET:
-      asprintf(&log_msg, "V[%d] (%d) = V[%d] (%d)", 
-               x, chip8->V[x], y, chip8->V[y]);
+      SDL_LogDebug(CATEGORY, "V[%d] (%d) = V[%d] (%d)", x, chip8->V[x], y, chip8->V[y]);
       chip8->V[x] = chip8->V[y];
       break;
 
     case ALU_OR:
-      asprintf(&log_msg, "V[%d] = %d | %d = %d", 
-               x, chip8->V[x], chip8->V[y], chip8->V[x] | chip8->V[y]);
+      SDL_LogDebug(CATEGORY, "V[%d] = %d | %d = %d", 
+          x, chip8->V[x], chip8->V[y], chip8->V[x] | chip8->V[y]);
       chip8->V[x] = chip8->V[x] | chip8->V[y];
       break;
 
     case ALU_AND:
-      asprintf(&log_msg, "V[%d] = %d & %d = %d", 
-               x, chip8->V[x], chip8->V[y], chip8->V[x] & chip8->V[y]);
+      SDL_LogDebug(CATEGORY, "V[%d] = %d & %d = %d", 
+          x, chip8->V[x], chip8->V[y], chip8->V[x] & chip8->V[y]);
       chip8->V[x] = chip8->V[x] & chip8->V[y];
       break;
 
     case ALU_XOR:
-      asprintf(&log_msg, "V[%d] = %d ^ %d = %d", 
-               x, chip8->V[x], chip8->V[y], chip8->V[x] ^ chip8->V[y]);
+      SDL_LogDebug(CATEGORY, "V[%d] = %d ^ %d = %d", 
+          x, chip8->V[x], chip8->V[y], chip8->V[x] ^ chip8->V[y]);
       chip8->V[x] = chip8->V[x] ^ chip8->V[y];
       break;
 
     case ALU_ADD:
       result = chip8->V[x] + chip8->V[y];
-      asprintf(&log_msg, "V[%d] = %d + %d = %d, ovf = %d", 
-               x, chip8->V[x], chip8->V[y], (uint8_t)result, result > 255);
+      SDL_LogDebug(CATEGORY, "V[%d] = %d + %d = %d, ovf = %d", 
+          x, chip8->V[x], chip8->V[y], (uint8_t)result, result > 255);
       chip8->V[x] = (uint8_t)result;
       chip8->V[0xF] = result > 255;
       break;
@@ -52,8 +48,8 @@ void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n) {
     // SUB (VX - VY)
     case ALU_SUBY:
       result = chip8->V[x] - chip8->V[y];
-      asprintf(&log_msg, "V[%d] = %d - %d = %d, ovf = %d", 
-               x, chip8->V[x], chip8->V[y], (uint8_t)result, (uint8_t)result > chip8->V[x]); 
+      SDL_LogDebug(CATEGORY, "V[%d] = %d - %d = %d, ovf = %d", 
+          x, chip8->V[x], chip8->V[y], (uint8_t)result, (uint8_t)result > chip8->V[x]); 
       // The overflow flag for subtraction is actually the opposite of what you expect
       chip8->V[0xF] = chip8->V[y] <= chip8->V[x];
       chip8->V[x] = (uint8_t)result;
@@ -63,7 +59,7 @@ void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n) {
       if (chip8->config.legacy_shift) {
         chip8->V[x] = chip8->V[y];
       }
-      asprintf(&log_msg, "V[%d] = %d >> 1, ovf = %d", x, chip8->V[x], chip8->V[x] & 1);
+      SDL_LogDebug(CATEGORY, "V[%d] = %d >> 1, ovf = %d", x, chip8->V[x], chip8->V[x] & 1);
       // shift VX right by 1, storing the shifted bit into VF
       chip8->V[0xF] = chip8->V[x] & 1; // isolate the last bit
       chip8->V[x] = chip8->V[x] >> 1;
@@ -72,8 +68,8 @@ void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n) {
     // SUB (VY - VX)
     case ALU_SUBX:
       result = chip8->V[y] - chip8->V[x];
-      asprintf(&log_msg, "V[%d] = %d - %d = %d, ovf = %d", 
-               x, chip8->V[y], chip8->V[x], (uint8_t)result, result > 255);
+      SDL_LogDebug(CATEGORY, "V[%d] = %d - %d = %d, ovf = %d", 
+          x, chip8->V[y], chip8->V[x], (uint8_t)result, result > 255);
       // The overflow flag for subtraction is actually the opposite of what you expect
       chip8->V[0xF] = chip8->V[x] <= chip8->V[y];
       chip8->V[x] = (uint8_t)result;
@@ -83,16 +79,13 @@ void exec_alu(Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n) {
       if (chip8->config.legacy_shift) {
         chip8->V[x] = chip8->V[y];
       }
-      asprintf(&log_msg, "V[%d] = %d << 1 = %d, ovf = %d",
-               x, chip8->V[x], (uint8_t)(chip8->V[x] << 1), (chip8->V[x] & 0x80) != 0);
+
+      SDL_LogDebug(CATEGORY, "V[%d] = %d << 1 = %d, ovf = %d",
+          x, chip8->V[x], (uint8_t)(chip8->V[x] << 1), (chip8->V[x] & 0x80) != 0);
       // shift VX left by 1, storing the shifted bit into VF
       chip8->V[0xF] = (chip8->V[x] & 0x80) != 0; // isolate the first bit
       chip8->V[x] = chip8->V[x] << 1;
       break;
-  }
-  if (log_msg != NULL) {
-    log_message(log_msg, chip8);
-    free(log_msg);
   }
 }
 
@@ -117,11 +110,9 @@ void exec_display(struct Chip8 *const chip8, uint8_t x, uint8_t y, uint8_t n) {
     }
   }
 
-  char* msg;
-  asprintf(&msg, "Display called: V[%d] = %d, V[%d] = %d, n = %d, V[0xF] = %d after instruction",
-           x, chip8->V[x], y, chip8->V[y], n, chip8->V[0xF]);
-  log_message(msg, chip8);
-  free(msg);
+  SDL_LogDebug(CATEGORY, 
+      "Display called: V[%d] = %d, V[%d] = %d, n = %d, V[0xF] = %d after instruction",
+      x, chip8->V[x], y, chip8->V[y], n, chip8->V[0xF]);
 }
 
 // Gets the first currently pressed key it can find, setting the out parameter
@@ -140,26 +131,25 @@ char get_pressed_key(struct Chip8 *const chip8, char* key) {
 
 void exec_io(struct Chip8 *const chip8, uint8_t x, uint8_t nn) {
   char result;
-  char* log_msg = NULL;
   switch (nn) {
     case IO_LDTIME:
-      asprintf(&log_msg, "set register %d to timer value %d", x, chip8->delay_timer);
+      SDL_LogDebug(CATEGORY, "set register %d to timer value %d", x, chip8->delay_timer);
       chip8->V[x] = chip8->delay_timer;
       break;
 
     case IO_SDTIME:
-      asprintf(&log_msg, "set delay timer to value V[%d]: %d", x, chip8->V[x]);
+      SDL_LogDebug(CATEGORY, "set delay timer to value V[%d]: %d", x, chip8->V[x]);
       chip8->delay_timer = chip8->V[x];
       break;
     
     case IO_SSTIME:
-      asprintf(&log_msg, "set sound timer to value V[%d]: %d", x, chip8->V[x]);
+      SDL_LogDebug(CATEGORY, "set sound timer to value V[%d]: %d", x, chip8->V[x]);
       chip8->sound_timer = chip8->V[x];
       break;
     
     case IO_ADD_IDX:
-      asprintf(&log_msg, "I changed from %d - added %d, resulting in %d", 
-               chip8->I, chip8->V[x], (chip8->I + chip8->V[x]) & 0x0FFF);
+      SDL_LogDebug(CATEGORY, "I changed from %d - added %d, resulting in %d",
+          chip8->I, chip8->V[x], (chip8->I + chip8->V[x]) & 0x0FFF);
       chip8->I += chip8->V[x];
       // I should only take up 12 bits, anything else is treated as an overflow
       chip8->V[0xF] = chip8->I >= 0x1000;
@@ -168,10 +158,10 @@ void exec_io(struct Chip8 *const chip8, uint8_t x, uint8_t nn) {
 
     case IO_GET_KEY:
       if (!get_pressed_key(chip8, &result)) {
-        log_message("no input pressed, instruction pointer decremented", chip8);
+        SDL_LogDebug(CATEGORY, "no input pressed, instruction pointer decremented");
         chip8->sp -= 2;
       } else {
-        asprintf(&log_msg, "received pressed key %x", result);
+        SDL_LogDebug(CATEGORY, "received pressed key %x", result);
         // technically converts from char to uint8, but the keys go
         // from 0-16 so this isn't really an issue
         chip8->V[x] = result;
@@ -180,15 +170,15 @@ void exec_io(struct Chip8 *const chip8, uint8_t x, uint8_t nn) {
 
     case IO_CHAR:
       // calculate font location of the specific character X in memory
-      asprintf(&log_msg, "Changing index from %d to %d based on font character %x",
-               chip8->I, FONT_START + chip8->V[x] * FONT_HEIGHT, chip8->V[x]);
+      SDL_LogDebug(CATEGORY, "Changing index from %d to %d based on font character %x",
+          chip8->I, FONT_START + chip8->V[x] * FONT_HEIGHT, chip8->V[x]);
       chip8->I = FONT_START + chip8->V[x] * FONT_HEIGHT; 
       break;
 
     case IO_BIN_DEC:
-      asprintf(&log_msg, "Setting memory locations %d, %d, %d to %d, %d, %d based on number %d",
-               chip8->I, chip8->I + 1, chip8->I + 2, 
-               chip8->V[x] / 100, (chip8->V[x] / 10) % 10, chip8->V[x] % 10, chip8->V[x]);
+      SDL_LogDebug(CATEGORY, "Setting memory locations %d, %d, %d to %d, %d, %d based on number %d",
+          chip8->I, chip8->I + 1, chip8->I + 2, 
+          chip8->V[x] / 100, (chip8->V[x] / 10) % 10, chip8->V[x] % 10, chip8->V[x]);
 
       // extract 3 decimal digits from a number and store them in memory
       chip8->memory[chip8->I] = chip8->V[x] / 100; // hundreds place
@@ -199,10 +189,8 @@ void exec_io(struct Chip8 *const chip8, uint8_t x, uint8_t nn) {
     case IO_SMEM:
       // Load all registers up to VX into memory starting at I
       for (int i = 0; i <= x; i++) {
-        asprintf(&log_msg, "Filling memory location %d with value V[%d]: %d",
-                 chip8->I + i, i, chip8->V[i]);
-        log_message(log_msg, chip8);
-        free(log_msg);
+        SDL_LogDebug(CATEGORY, "Filling memory location %d with value V[%d]: %d",
+            chip8->I + i, i, chip8->V[i]);
 
         chip8->memory[chip8->I + i] = chip8->V[i];
       }
@@ -210,34 +198,25 @@ void exec_io(struct Chip8 *const chip8, uint8_t x, uint8_t nn) {
       // On the original CHIP-8 systems, I gets incremented for each value it loads in
       if (chip8->config.legacy_indexing) {
         chip8->I += x;
-        asprintf(&log_msg, "legacy indexing flag present, incrementing index by %d (new val = %d)",
-                 x, chip8->I);
-      } else {
-        log_msg = NULL;
+        SDL_LogDebug(CATEGORY, 
+            "legacy indexing flag present, incrementing index by %d (new val = %d)", x, chip8->I);
       }
       break;
 
     case IO_LMEM:
       for (int i = 0; i <= x; i++) {
-        asprintf(&log_msg, "Loading register V[%d] from memory location %d with value %d",
-                 i, chip8->I + i, chip8->memory[chip8->I + i]);
+        SDL_LogDebug(CATEGORY, "Loading register V[%d] from memory location %d with value %d",
+            i, chip8->I + i, chip8->memory[chip8->I + i]);
         chip8->V[i] = chip8->memory[chip8->I + i];
-        free(log_msg);
       }
-      log_msg = NULL;
       break;
-  }
-
-  if (log_msg != NULL) {
-    log_message(log_msg, chip8);
-    free(log_msg);
   }
 }
 
 // Reset all pixels on a CHIP-8's screen to be blank
 void clear_screen(struct Chip8 *const chip8) {
   
-  log_message("clearing screen", chip8);
+  SDL_LogDebug(CATEGORY, "clearing screen");
 
   for (int y = 0; y < DISPLAY_HEIGHT; y++) {
     for (int x = 0; x < DISPLAY_WIDTH; x++) {
@@ -254,7 +233,6 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
   uint8_t x = (instruction & OP_X) >> 8;
   uint8_t y = (instruction & OP_Y) >> 4;
   chip8->display_flag = 0;
-  char* log_msg = NULL;
   char* branch_msg;
   char* ext_msg;
 
@@ -265,21 +243,22 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
         clear_screen(chip8);
       } else if (instruction == OP_RET) {
         // NOTE - I don't think it's necessary to overwrite the stack value?
-        asprintf(&log_msg, "Return reached, setting pc to %d and decrementing sp to %d",
-                 chip8->stack[chip8->sp], chip8->sp - 1);
+        SDL_LogDebug(CATEGORY, "Return reached, setting pc to %d and decrementing sp to %d", 
+            chip8->stack[chip8->sp], chip8->sp - 1);
+
         chip8->pc = chip8->stack[chip8->sp];
         chip8->sp--;
       }
       break;
 
     case OP_JUMP:
-      asprintf(&log_msg, "Jump reached, setting pc to %d", nnn);
+      SDL_LogDebug(CATEGORY, "Jump reached, setting pc to %d", nnn);
       chip8->pc = nnn; 
       break;
 
     case OP_CALL:
-      asprintf(&log_msg, "Call reached, adding pc (%d) to the stack and setting pc to %d",
-               chip8->pc, nnn);
+      SDL_LogDebug(CATEGORY, "Call reached, adding pc (%d) to the stack and setting pc to %d",
+          chip8->pc, nnn);
       chip8->sp++;
       chip8->stack[chip8->sp] = chip8->pc;
       chip8->pc = nnn;
@@ -292,8 +271,9 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
         branch_msg = "sides equal, branching";
         chip8->pc += 2;
       }
-      asprintf(&log_msg, "BEQI - Comparing %d with %d: %s, pc: %d",
-               chip8->V[x], nn, branch_msg, chip8->pc);
+      
+      SDL_LogDebug(CATEGORY, "BEQI - Comparing %d with %d: %s, pc: %d",
+          chip8->V[x], nn, branch_msg, chip8->pc);
       break;
 
       // skip 1 instruction if VX != NN
@@ -303,8 +283,8 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
         branch_msg = "sides not equal, branching";
         chip8->pc += 2;
       }
-      asprintf(&log_msg, "BNEI - Comparing %d with %d: %s, pc: %d",
-               chip8->V[x], nn, branch_msg, chip8->pc);
+      SDL_LogDebug(CATEGORY, "BNEI - Comparing %d with %d: %s, pc: %d",
+          chip8->V[x], nn, branch_msg, chip8->pc);
       break;
     
     case OP_BEQ:
@@ -314,8 +294,8 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
         branch_msg = "sides equal, branching";
         chip8->pc += 2;
       }
-      asprintf(&log_msg, "BEQ - Comparing %d with %d: %s, pc: %d",
-               chip8->V[x], chip8->V[y], branch_msg, chip8->pc);
+      SDL_LogDebug(CATEGORY, "BEQ - Comparing %d with %d: %s, pc: %d",
+          chip8->V[x], chip8->V[y], branch_msg, chip8->pc);
       break;
     
     case OP_BNE:
@@ -325,17 +305,17 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
         branch_msg = "sides not equal, branching";
         chip8->pc += 2;
       }
-      asprintf(&log_msg, "BNE - Comparing %d with %d: %s, pc: %d",
-               chip8->V[x], chip8->V[y], branch_msg, chip8->pc);
+      SDL_LogDebug(CATEGORY, "BNE - Comparing %d with %d: %s, pc: %d",
+          chip8->V[x], chip8->V[y], branch_msg, chip8->pc);
       break;
     
     case OP_LI:
-      asprintf(&log_msg, "LI - Setting V[%d] to immediate value %d", x, nn);
+      SDL_LogDebug(CATEGORY, "LI - Setting V[%d] to immediate value %d", x, nn);
       chip8->V[x] = nn;
       break;
     
     case OP_ADDI:
-      asprintf(&log_msg, "ADDI - V[%d] = %d + %d (%d)", x, chip8->V[x], nn, chip8->V[x] + nn);
+      SDL_LogDebug(CATEGORY, "ADDI - V[%d] = %d + %d (%d)", x, chip8->V[x], nn, chip8->V[x] + nn);
       chip8->V[x] += nn; 
       break;
 
@@ -344,19 +324,19 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
       break;
 
     case OP_SET_IDX:
-      asprintf(&log_msg, "setting I register (%d) to %d", chip8->I, nnn);
+      SDL_LogDebug(CATEGORY, "setting I register (%d) to %d", chip8->I, nnn);
       chip8->I = nnn;
       break;
 
     case OP_JO:
       // A side effect introduced in CHIP-48 and SUPER-CHIP systems that was likely a bug
       if (chip8->config.jump_quirk) {
-        asprintf(&log_msg, "Jump w/ Offset (w/ quirk) - setting pc to %d + V[%d] (%d) = %d",
-                 nnn, x, chip8->V[x], nnn + chip8->V[x]);
+        SDL_LogDebug(CATEGORY, "Jump w/ Offset (w/ quirk) - setting pc to %d + V[%d] (%d) = %d",
+            nnn, x, chip8->V[x], nnn + chip8->V[x]);
         chip8->pc = nnn + chip8->V[x];
       } else {
-        asprintf(&log_msg, "Jump w/ Offset - setting pc to %d + %d (%d)",
-                 nnn, chip8->V[0], nnn + chip8->V[0]);
+        SDL_LogDebug(CATEGORY, "Jump w/ Offset - setting pc to %d + %d (%d)",
+            nnn, chip8->V[0], nnn + chip8->V[0]);
         chip8->pc = nnn + chip8->V[0];
       }
       break;
@@ -366,7 +346,7 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
       // generate a random number, do a binary AND with NN, and load it into VX
       // NOTE - this is bad but I don't want to make a new variable
       n = rand();
-      asprintf(&log_msg, "RAND - setting V[%d] to %d (rand) & %d", x, n, nn);
+      SDL_LogDebug(CATEGORY, "RAND - setting V[%d] to %d (rand) & %d", x, n, nn);
       chip8->V[x]= nn & n;
       break;
     
@@ -389,8 +369,8 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
       } else {
         ext_msg = "Bad instruction";
       }
-      asprintf(&log_msg, "%s - Checking if key %x is pressed: %s, pc: %d",
-               ext_msg, chip8->V[x], branch_msg, chip8->pc);
+      SDL_LogDebug(CATEGORY, "%s - Checking if key %x is pressed: %s, pc: %d",
+          ext_msg, chip8->V[x], branch_msg, chip8->pc);
       break;
     
     case OP_IO:
@@ -398,10 +378,6 @@ void exec_instruction(Chip8 *const chip8, uint16_t instruction) {
       break;
   }
 
-  if (log_msg != NULL) {
-    log_message(log_msg, chip8);
-    free(log_msg);
-  }
 }
 
 int exec_cycle(Chip8 *const chip8, struct View *const view) {
@@ -415,11 +391,7 @@ int exec_cycle(Chip8 *const chip8, struct View *const view) {
   }
 
   uint16_t instruction = fetch_instruction(chip8);
-  
-  char* log_msg;
-  asprintf(&log_msg, "fetched instruction %04x at address %d", instruction, chip8->pc - 2);
-  log_message(log_msg, chip8);
-  free(log_msg);
+  SDL_LogDebug(CATEGORY, "fetched instruction %04x at address %d", instruction, chip8->pc - 2);
 
   exec_instruction(chip8, instruction);
   
@@ -478,7 +450,6 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
     }
   }
 
-  fprintf(stderr, "Error: this program is not complete\n");
-  return -1;
+  return 0;
 }
 

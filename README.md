@@ -4,9 +4,10 @@ Developed by Patrick Henegan
 
 ## What's a CHIP-8?
 
-This project is an interpreter which executes instructions for the CHIP-8 microprocessor.
-The CHIP-8 was a virtual platform on computers from the 1970's and
-1980's, which was intended to be a standard instruction set to develop games for.
+This project is an interpreter which executes instructions for the CHIP-8 system.
+The CHIP-8 was a virtual platform (which sometimes had its own physical hardware)
+on some computers from the 1970's and 1980's. 
+It was intended to make game development easier by providing a standard instruction set.
 
 ## Motivation
 
@@ -19,16 +20,17 @@ This is also a good starting point before moving on to other retro interpreters/
 and seemed interesting to learn about.
 
 ## What works? What's left?
-- The IBM logo test program, along with BC_test and another test program both function.
-  Tetris seems to work, though I think my input mapping is not being done correctly because
-  the controls don't appear to match with other emulators I was testing against. 
 - the chip-8 sound timer works but currently doesn't actually play any sound. i want to see if i can
   play a tone or something directly through sdl but i may have to find an mp3 or wav file for it.
+
+(These ones are lower priority because they would require a decent amount of work and I want to
+move onto other projects)
 - right now the controls are set in a header file which is relatively easy to configure, but
   adding support for something like a json or yaml config file would allow more flexibility by
-  offering configuration at runtime instead of compile-time.
-- I may eventually add chip-48 or super-chip support, though honestly that is pretty unlikely
-  since I would likely want to move on to other emulators/isa interpreters.
+  offering configuration at runtime instead of compile-time. This is low priority because it
+  would likely involve bringing in another library for JSON parsing
+- I may eventually add CHIP-48 or SUPER-CHIP support. This is also low priority since I want to
+  move onto other projects.
 
 ## Setup
 

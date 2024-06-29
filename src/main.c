@@ -1,6 +1,7 @@
 #include "chip8.h"
 #include "control.h"
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_log.h>
 #include <SDL2/SDL_stdinc.h>
 #include <time.h>
 #include <unistd.h>
@@ -28,7 +29,7 @@ static inline int debug(char* str) {
 
 void free_memory(Chip8* chip8, int flags) {
   chip8_destroy(chip8);
-  SDL_QuitSubSystem(SDL_INIT_AUDIO | SDL_INIT_TIMER);
+  SDL_QuitSubSystem(flags);
   SDL_Quit();
 }
 
@@ -54,6 +55,7 @@ int main(int argc, char* argv[]) {
   for (int i = 1; i < argc; i++) {
     if (debug(argv[i])) {
       chip8->config.debug = 1;
+      SDL_LogSetAllPriority(SDL_LOG_PRIORITY_DEBUG);
     } else if (old_shift(argv[i])) {
       chip8->config.legacy_shift = 1;
     } else if (jump_quirk(argv[i])) {
