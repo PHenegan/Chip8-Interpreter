@@ -2,6 +2,7 @@
 #include "chip8-timer.h"
 #include "chip8.h"
 #include "stdio.h"
+#include "view.h"
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_log.h>
 #include <SDL2/SDL_scancode.h>
@@ -399,11 +400,8 @@ int exec_cycle(Chip8 *const chip8, struct View *const view) {
     view_draw(view, chip8->screen);
   }
 
-  if (chip8->sound_flag) {
-    // TODO - this isn't implemented
-    view_play_sound();
-    chip8->sound_flag = 0;
-  }
+  view_set_sound(view, chip8->sound_flag);
+
   return 0;
 }
 
@@ -433,7 +431,8 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
       int key_count;
       SDL_PumpEvents();
       const uint8_t* keystate = SDL_GetKeyboardState(&key_count);
-      while (!keystate[SDL_SCANCODE_N]) {
+      bool paused = true;
+      while (paused) {
         SDL_PumpEvents();
         if (keystate[SDL_SCANCODE_RETURN]) {
           manual = !manual;
@@ -443,7 +442,10 @@ int exec_program(Chip8 *const chip8, struct View *const view) {
         if (!manual) {
           break;
         }
+        view_set_sound(view, 0);
+        paused = !keystate[SDL_SCANCODE_N] && manual;
       }
+      view_set_sound(view, chip8->sound_flag);
       if (manual) {
         SDL_Delay(250);
       }

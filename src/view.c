@@ -1,4 +1,6 @@
+#include <math.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_audio.h>
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_video.h>
@@ -13,7 +15,21 @@ struct View {
   int tile_size;
   int tiles_width;
   int tiles_height;
+  SDL_AudioSpec sound;
+  int sample_count;
+  bool playing_sound;
 };
+
+void audio_callback(void *user_data, Uint8 *raw_buffer, int bytes) {
+  Sint16 *buffer = (Sint16*)raw_buffer;
+  int length = bytes / 2; // 2 bytes per sample for AUDIO_S16SYS
+  int *sample_count = (int*)user_data; 
+
+  for(int i = 0; i < length; i++, (*sample_count)++) {
+    double time = (double)*sample_count / (double)SAMPLE_RATE;
+    buffer[i] = (Sint16)(AMPLITUDE * sin(2.0f * M_PI * 440.0f * time)); // render 441 HZ sine wave
+  }
+}
 
 View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const char *title) {
   struct View *view = malloc(sizeof(struct View));
@@ -32,13 +48,32 @@ View* view_init(int tiles_horiz, int tiles_vert, int tile_size, const char *titl
   view->tile_size = tile_size;
   view->tiles_width = tiles_horiz;
   view->tiles_height = tiles_vert;
+  view->playing_sound = false;
+  
+  // setup the data for SDL audio to play
+  int sample_count = 0;
+  view->sound.freq = SAMPLE_RATE;
+  view->sound.format = AUDIO_S16SYS;
+  view->sound.channels = 1;
+  view->sound.samples = 2048;
+  view->sound.callback = audio_callback;
+  view->sound.userdata = &view->sample_count;
+  SDL_OpenAudio(&view->sound, NULL);
 
   return view;
 }
 
-int view_play_sound() {
-  // TODO - implement
-  return -1;
+int view_set_sound(View *const view, bool enable) {
+  if (view->playing_sound && !enable) {
+    SDL_PauseAudio(1);
+  }
+  if (!view->playing_sound && enable) {
+    // Set the sound information for the beeping noise
+    view->sample_count = 0;
+    SDL_PauseAudio(0);
+  }
+  view->playing_sound = enable;
+  return 0;
 }
 
 int view_get_input(unsigned char* const keys, const int key_count) {
@@ -88,6 +123,8 @@ int view_draw(View *const view, unsigned char *const screen) {
         SDL_RenderFillRect(view->renderer, &rect);
       }
       else {
+        // I added a kind of dot here to create a grid-effect, not strictly necessary but
+        // it helped me confirm my rendering logic is correct
         SDL_SetRenderDrawColor(view->renderer, 50, 50, 50, 255);
         SDL_Rect rect;
         rect.x = col * view->tile_size;
@@ -105,6 +142,6 @@ int view_draw(View *const view, unsigned char *const screen) {
 void view_destroy(View *view) {
   SDL_DestroyRenderer(view->renderer);
   SDL_DestroyWindow(view->window);
-
+  SDL_CloseAudio();
   free(view);
 }

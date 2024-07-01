@@ -2,7 +2,6 @@
 #include "control.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_log.h>
-#include <SDL2/SDL_stdinc.h>
 #include <time.h>
 #include <unistd.h>
 #include "view.h"

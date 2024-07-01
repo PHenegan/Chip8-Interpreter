@@ -20,8 +20,8 @@ This is also a good starting point before moving on to other retro interpreters/
 and seemed interesting to learn about.
 
 ## What works? What's left?
-- the chip-8 sound timer works but currently doesn't actually play any sound. i want to see if i can
-  play a tone or something directly through sdl but i may have to find an mp3 or wav file for it.
+- the chip-8 sound timer works but right now it makes a sine wave frequency. I may switch
+  this to use a square wave frequency but for now it works
 
 (These ones are lower priority because they would require a decent amount of work and I want to
 move onto other projects)
